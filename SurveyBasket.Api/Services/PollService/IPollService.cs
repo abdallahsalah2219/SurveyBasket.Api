@@ -1,4 +1,4 @@
-﻿namespace SurveyBasket.Api.Services
+﻿namespace SurveyBasket.Api.Services.PollService
 {
     public interface IPollService
     {

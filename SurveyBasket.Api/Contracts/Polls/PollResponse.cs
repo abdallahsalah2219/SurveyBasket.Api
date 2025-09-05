@@ -1,14 +1,13 @@
-﻿
-
-namespace SurveyBasket.Api.Contracts.Requests
+﻿namespace SurveyBasket.Api.Contracts.Polls
 {
-    public record PollRequest(
+    public record PollResponse
+        (
+        int Id,
         string Title,
         string Summary,
         bool IsPublished,
         DateOnly StartAt,
         DateOnly EndsAt
-
         );
 
 }
