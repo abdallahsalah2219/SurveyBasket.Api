@@ -5,7 +5,6 @@
         string Summary,
         DateOnly StartAt,
         DateOnly EndsAt
-
         );
 
 }

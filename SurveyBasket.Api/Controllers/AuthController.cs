@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Options;
 using SurveyBasket.Api.Authentication;
+using SurveyBasket.Api.Contracts.Authentication;
 using SurveyBasket.Api.Services.AuthService;
 
 namespace SurveyBasket.Api.Controllers;
@@ -24,13 +25,12 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
             cancellationToken);
 
         // If registration failed, return BadRequest
-        if (authResponse is null)
-        {
-            return BadRequest(new { Message = "Registration failed. Email may already be in use." });
-        }
+
 
         // Return the authentication response on success
-        return Ok(authResponse);
+        return authResponse.IsSuccess
+            ? Ok(authResponse.Value)
+            : Problem(statusCode: StatusCodes.Status400BadRequest, title: authResponse.Error.Code, detail: authResponse.Error.Description);
     }
 
 
@@ -39,7 +39,9 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
     {
         var authResult = await _authService.GetTokenAsync(request.Email, request.Password, cancellationToken);
 
-        return authResult is null ? BadRequest("Invalid Login") : Ok(authResult);
+        return authResult.IsSuccess
+        ? Ok(authResult.Value)
+        : Problem(statusCode: StatusCodes.Status400BadRequest, title: authResult.Error.Code, detail: authResult.Error.Description);
     }
 
 
@@ -48,14 +50,18 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
     {
         var authResult = await _authService.GetRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
 
-        return authResult is null ? BadRequest("Invalid Token") : Ok(authResult);
+        return authResult.IsSuccess
+            ? Ok(authResult.Value)
+            : Problem(statusCode: StatusCodes.Status400BadRequest, title: authResult.Error.Code, detail: authResult.Error.Description);
     }
 
     [HttpPost("revoke-refresh-token")]
     public async Task<IActionResult> RevokeRefreshTokenAsync([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
-        var isRevoked = await _authService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
+        var result = await _authService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
 
-        return isRevoked ? Ok(): BadRequest("Operation Failed") ;
+        return result.IsSuccess 
+            ? Ok() 
+            : Problem(statusCode: StatusCodes.Status400BadRequest, title: result.Error.Code, detail: result.Error.Description);
     }
 }

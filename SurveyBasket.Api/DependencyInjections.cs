@@ -18,6 +18,16 @@ public static class DependencyInjections
     public static IServiceCollection AddDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddControllers();
+
+        services.AddCors(options =>
+        options.AddDefaultPolicy( builder =>
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader()      
+        )
+        );
+
+
         services.AddAuthConfig(configuration);
         #region Add DbContext
         services.AddDbContext<ApplicationDbContext>(options =>
@@ -82,15 +92,15 @@ public static class DependencyInjections
 
         //services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
 
-        
+
         services.AddOptions<JwtOptions>()
             .BindConfiguration(JwtOptions.SectionName)
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        var jwtSettings =configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
+        var jwtSettings = configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>();
 
-        
+
 
         services.AddAuthentication(options =>
         {
@@ -112,7 +122,7 @@ public static class DependencyInjections
              };
          });
 
-        
+
         return services;
 
     }
