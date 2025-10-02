@@ -2,6 +2,7 @@
 using SurveyBasket.Api.Authentication;
 using SurveyBasket.Api.Contracts.Authentication;
 using SurveyBasket.Api.Services.AuthService;
+using System.Diagnostics;
 
 namespace SurveyBasket.Api.Controllers;
 
@@ -30,21 +31,23 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
         // Return the authentication response on success
         return authResponse.IsSuccess
             ? Ok(authResponse.Value)
-            : Problem(statusCode: StatusCodes.Status400BadRequest, title: authResponse.Error.Code, detail: authResponse.Error.Description);
+            : authResponse.ToProblem(StatusCodes.Status400BadRequest);
     }
 
 
     [HttpPost("")]
     public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
+
+        
         var authResult = await _authService.GetTokenAsync(request.Email, request.Password, cancellationToken);
 
         return authResult.IsSuccess
         ? Ok(authResult.Value)
-        : Problem(statusCode: StatusCodes.Status400BadRequest, title: authResult.Error.Code, detail: authResult.Error.Description);
+        : authResult.ToProblem( StatusCodes.Status400BadRequest);
+           
     }
-
-
+    
     [HttpPost("refresh")]
     public async Task<IActionResult> RefreshAsync([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
@@ -52,7 +55,7 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
 
         return authResult.IsSuccess
             ? Ok(authResult.Value)
-            : Problem(statusCode: StatusCodes.Status400BadRequest, title: authResult.Error.Code, detail: authResult.Error.Description);
+            : authResult.ToProblem(StatusCodes.Status400BadRequest);
     }
 
     [HttpPost("revoke-refresh-token")]
@@ -60,8 +63,8 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
     {
         var result = await _authService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
 
-        return result.IsSuccess 
-            ? Ok() 
-            : Problem(statusCode: StatusCodes.Status400BadRequest, title: result.Error.Code, detail: result.Error.Description);
+        return result.IsSuccess
+            ? Ok()
+            : result.ToProblem(StatusCodes.Status400BadRequest);
     }
 }
