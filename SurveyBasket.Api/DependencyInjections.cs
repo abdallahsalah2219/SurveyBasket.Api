@@ -10,6 +10,8 @@ using System.Reflection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.Extensions.Options;
 using System.Text;
+using SurveyBasket.Api.Services;
+using SurveyBasket.Api.Services.QuestionService;
 
 namespace SurveyBasket.Api;
 
@@ -43,6 +45,7 @@ public static class DependencyInjections
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IPollService, PollService>();
+        services.AddScoped<IQuestionService, QuestionService>();
 
         // Add ExceptionHandler service
         services.AddExceptionHandler<GlobalExceptionHandler>();
