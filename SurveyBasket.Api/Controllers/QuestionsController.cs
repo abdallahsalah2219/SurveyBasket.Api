@@ -1,7 +1,7 @@
 ﻿
 
 using SurveyBasket.Api.Contracts.Questions;
-using SurveyBasket.Api.Services;
+using SurveyBasket.Api.Services.QuestionService;
 
 namespace SurveyBasket.Api.Controllers;
 
@@ -19,7 +19,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         var result = await _questionService.GetAllAsync(pollId, cancellationToken);
 
        return result.IsSuccess ? Ok(result.Value) 
-            : result.ToProblem(StatusCodes.Status404NotFound);
+            : result.ToProblem();
 
     }
 
@@ -29,7 +29,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         var result = await _questionService.GetAsync(pollId, questionId, cancellationToken);
 
         return result.IsSuccess ? Ok(result.Value)
-            : result.ToProblem(StatusCodes.Status404NotFound);
+            : result.ToProblem();
     }
 
     [HttpPost("")]
@@ -41,9 +41,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         if (result.IsSuccess)
             return CreatedAtAction(nameof(Get), new { pollId = pollId, id = result.Value.Id } , result.Value);
 
-        return result.Error.Equals(QuestionErrors.DuplicatedQuestionContent)
-             ? result.ToProblem(StatusCodes.Status409Conflict)
-             : result.ToProblem(StatusCodes.Status404NotFound);
+       return result.ToProblem() ;
     }
     [HttpPut("{questionId}")]
 
@@ -51,12 +49,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
     {
         var result = await _questionService.UpdateAsync(pollId , questionId , request , cancellationToken);
 
-        if (result.IsSuccess)
-            return NoContent();
-
-        return result.Error.Equals(QuestionErrors.DuplicatedQuestionContent)
-             ? result.ToProblem(StatusCodes.Status409Conflict)
-             : result.ToProblem(StatusCodes.Status404NotFound);
+        return result.IsSuccess ? NoContent() : result.ToProblem();
     }
 
     [HttpPut("{questionId}/toggleStatus")]
@@ -66,6 +59,6 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
 
         return result.IsSuccess
             ? NoContent()
-            : result.ToProblem(StatusCodes.Status404NotFound);
+            : result.ToProblem();
     }
 }

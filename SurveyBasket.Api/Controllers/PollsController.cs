@@ -16,11 +16,12 @@ public class PollsController(IPollService pollService) : ControllerBase
     [HttpGet("")]
     public async Task <IActionResult> GetAll(CancellationToken cancellationToken)
     {
-        var polls = await _pollService.GetAllAsync(cancellationToken);
-
-        var response = polls.Adapt<IEnumerable<PollResponse>>();
-
-        return Ok(response);
+        return Ok(await _pollService.GetAllAsync(cancellationToken));
+    } 
+    [HttpGet("get-current-polls")]
+    public async Task <IActionResult> GetCurrentPolls(CancellationToken cancellationToken)
+    {
+        return Ok(await _pollService.GetCurrentPollsAsync(cancellationToken));
     }
 
     [HttpGet("{id}")]
@@ -31,7 +32,7 @@ public class PollsController(IPollService pollService) : ControllerBase
 
         return result.IsSuccess
             ? Ok(result.Value)
-            : result.ToProblem(StatusCodes.Status404NotFound);
+            : result.ToProblem();
     }
 
     [HttpPost("")]
@@ -43,7 +44,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         // this method helps front end developer to know where this New Object location is by gave him the URL OF this Object
         return result.IsSuccess
             ? CreatedAtAction(nameof(Get), new { id = result.Value.Id }, result.Value)
-            : result.ToProblem(StatusCodes.Status409Conflict);
+            : result.ToProblem();
         
 
     }
@@ -54,12 +55,10 @@ public class PollsController(IPollService pollService) : ControllerBase
     {
         var result = await _pollService.UpdateAsync(request, id, cancellationToken);
 
-        if (result.IsSuccess)
-            return NoContent();
+         return result.IsSuccess? NoContent() : result.ToProblem();
+            
 
-        return result.Error.Equals(PollErrors.DuplicatedPollTitle)
-                ? result.ToProblem(StatusCodes.Status409Conflict)
-                : result.ToProblem(StatusCodes.Status404NotFound);
+        
     }
 
     [HttpDelete("{id}")]
@@ -69,7 +68,7 @@ public class PollsController(IPollService pollService) : ControllerBase
        
         return result.IsSuccess
             ? NoContent()
-            : result.ToProblem(StatusCodes.Status404NotFound);
+            : result.ToProblem();
     }
 
     [HttpPut("{id}/togglePublish")]
@@ -82,7 +81,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         // The best choice for Update Endpoint
         return result.IsSuccess
             ? NoContent() 
-            : result.ToProblem(StatusCodes.Status404NotFound);
+            : result.ToProblem();
     }
 
 }

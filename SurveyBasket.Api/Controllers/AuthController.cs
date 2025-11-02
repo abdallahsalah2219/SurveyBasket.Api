@@ -31,7 +31,7 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
         // Return the authentication response on success
         return authResponse.IsSuccess
             ? Ok(authResponse.Value)
-            : authResponse.ToProblem(StatusCodes.Status400BadRequest);
+            : authResponse.ToProblem();
     }
 
 
@@ -44,7 +44,7 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
 
         return authResult.IsSuccess
         ? Ok(authResult.Value)
-        : authResult.ToProblem( StatusCodes.Status400BadRequest);
+        : authResult.ToProblem( );
            
     }
     
@@ -55,7 +55,7 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
 
         return authResult.IsSuccess
             ? Ok(authResult.Value)
-            : authResult.ToProblem(StatusCodes.Status400BadRequest);
+            : authResult.ToProblem();
     }
 
     [HttpPost("revoke-refresh-token")]
@@ -65,6 +65,6 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
 
         return result.IsSuccess
             ? Ok()
-            : result.ToProblem(StatusCodes.Status400BadRequest);
+            : result.ToProblem();
     }
 }

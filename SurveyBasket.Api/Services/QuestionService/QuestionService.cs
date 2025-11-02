@@ -31,6 +31,34 @@ public class QuestionService(ApplicationDbContext context) : IQuestionService
 
         return Result.Success<IEnumerable<QuestionResponse>>(questions);
 
+
+
+    }
+
+    public async Task<Result<IEnumerable<QuestionResponse>>> GetAvailableQuestionsAsync(int pollId, string userId, CancellationToken cancellationToken = default)
+    {
+        var hasVote = await _context.Votes.AnyAsync(x => x.PollId == pollId && x.UserId == userId, cancellationToken);
+        if (hasVote)
+            return Result.Failure<IEnumerable<QuestionResponse>>(VoteErrors.DuplicatedVote);
+
+        var pollIsExists = await _context.Polls.AnyAsync(x => x.Id == pollId && x.IsPublished && x.StartAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow), cancellationToken);
+        if (!pollIsExists)
+            return Result.Failure<IEnumerable<QuestionResponse>>(PollErrors.PollNotFound);
+
+
+
+        var questions = await _context.Questions
+            .Where(x => x.PollId == pollId && x.IsActive)
+            .Include(x => x.Answers)
+            .Select(q => new QuestionResponse(
+                  q.Id,
+                  q.Content,
+                  q.Answers.Where(a =>a.IsActive).Select(a =>new AnswerResponse(a.Id,a.Content))
+                ))
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        return Result.Success<IEnumerable<QuestionResponse>>(questions);
     }
 
     public async Task<Result<QuestionResponse>> GetAsync(int pollId, int questionId, CancellationToken cancellationToken = default)
@@ -91,17 +119,17 @@ public class QuestionService(ApplicationDbContext context) : IQuestionService
             .Include(x => x.Answers)
             .SingleOrDefaultAsync(x => x.PollId == pollId && x.Id == questionId, cancellationToken);
 
-        if(question is null)
+        if (question is null)
             return Result.Failure(QuestionErrors.QuestionNotFound);
 
         question.Content = request.Content;
 
         // Get Current Answer in Database
-        var currentAnswers = question.Answers.Select(x=>x.Content).ToList();
+        var currentAnswers = question.Answers.Select(x => x.Content).ToList();
 
         // Add New Answers If I want
 
-        var newAnswers =request.Answers.Except(currentAnswers).ToList();
+        var newAnswers = request.Answers.Except(currentAnswers).ToList();
 
         newAnswers.ForEach(answer =>
         {
