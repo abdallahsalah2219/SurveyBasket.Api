@@ -13,6 +13,7 @@ using System.Text;
 using SurveyBasket.Api.Services.QuestionService;
 using System.Runtime.CompilerServices;
 using SurveyBasket.Api.Services.VoteService;
+using SurveyBasket.Api.Services.ResultService;
 
 namespace SurveyBasket.Api;
 
@@ -48,6 +49,7 @@ public static class DependencyInjections
         services.AddScoped<IPollService, PollService>();
         services.AddScoped<IQuestionService, QuestionService>();
         services.AddScoped<IVoteService, VoteService>();
+        services.AddScoped<IResultService, ResultService>();
 
         // Add ExceptionHandler service
         services.AddExceptionHandler<GlobalExceptionHandler>();

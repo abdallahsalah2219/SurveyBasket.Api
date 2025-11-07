@@ -10,6 +10,7 @@ global using SurveyBasket.Api.Entities;
 global using SurveyBasket.Api.Persistence;
 global using SurveyBasket.Api.Services.PollService;
 global using SurveyBasket.Api.Contracts.Polls;
+global using SurveyBasket.Api.Contracts.Results;
 global using SurveyBasket.Api.Contracts.Authentication;
 global using SurveyBasket.Api.Abstractions;
 global using SurveyBasket.Api.Errors;
