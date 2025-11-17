@@ -8,6 +8,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDependencies(builder.Configuration);
 
+//  If I Want to Use  DistributedMemoryCache
+//builder.Services.AddDistributedMemoryCache();
+
 // Add serilog  Of Logging
 builder.Host.UseSerilog((context, configuration) =>
          configuration.ReadFrom.Configuration(context.Configuration)

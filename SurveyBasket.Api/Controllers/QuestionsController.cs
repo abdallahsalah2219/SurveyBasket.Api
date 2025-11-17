@@ -39,7 +39,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
         var result = await _questionService.AddAsync(pollId, request, cancellationToken);
 
         if (result.IsSuccess)
-            return CreatedAtAction(nameof(Get), new { pollId = pollId, id = result.Value.Id } , result.Value);
+            return CreatedAtAction(nameof(Get), new { pollId, questionId = result.Value.Id } , result.Value);
 
        return result.ToProblem() ;
     }

@@ -14,6 +14,7 @@ using SurveyBasket.Api.Services.QuestionService;
 using System.Runtime.CompilerServices;
 using SurveyBasket.Api.Services.VoteService;
 using SurveyBasket.Api.Services.ResultService;
+using SurveyBasket.Api.Services.CacheService;
 
 namespace SurveyBasket.Api;
 
@@ -22,6 +23,9 @@ public static class DependencyInjections
     public static IServiceCollection AddDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddControllers();
+
+        // Add Service Of HybridCache
+        services.AddHybridCache();
 
         services.AddCors(options =>
         options.AddDefaultPolicy( builder =>
@@ -50,6 +54,9 @@ public static class DependencyInjections
         services.AddScoped<IQuestionService, QuestionService>();
         services.AddScoped<IVoteService, VoteService>();
         services.AddScoped<IResultService, ResultService>();
+
+        //  If I Want to Use  DistributedMemoryCache
+        //services.AddScoped<ICacheService, CacheService>();
 
         // Add ExceptionHandler service
         services.AddExceptionHandler<GlobalExceptionHandler>();
