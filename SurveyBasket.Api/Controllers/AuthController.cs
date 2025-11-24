@@ -14,29 +14,28 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
     //private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
     [HttpPost("register")]
-    public async Task<IActionResult> RegisterAsync([FromBody] RegisterRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
-        // Call the AuthService to register the user
-        var authResponse = await _authService.RegisterAsync(
-            request.Email,
-            request.Password,
-            request.FirstName,
-            request.LastName,
-            request.PhoneNumber,
-            cancellationToken);
+        var result = await _authService.RegisterAsync(request, cancellationToken);
+        return result.IsSuccess ? Ok(): result.ToProblem();
+    }
 
-        // If registration failed, return BadRequest
-
-
-        // Return the authentication response on success
-        return authResponse.IsSuccess
-            ? Ok(authResponse.Value)
-            : authResponse.ToProblem();
+    [HttpPost("confirm-email")]
+    public async Task<IActionResult> ConfirmEmail([FromBody] ConfirmEmailRequest request)
+    {
+        var result = await _authService.ConfirmEmailAsync(request);
+        return result.IsSuccess ? Ok() : result.ToProblem();
+    }
+    [HttpPost("resend-confirmation-email")]
+    public async Task<IActionResult> ResendConfirmationEmail([FromBody] ResendConfirmationEmailRequest request)
+    {
+        var result = await _authService.ResendConfirmationEmailAsync(request);
+        return result.IsSuccess ? Ok() : result.ToProblem();
     }
 
 
     [HttpPost("")]
-    public async Task<IActionResult> LoginAsync([FromBody] LoginRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
 
         
@@ -49,7 +48,7 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
     }
     
     [HttpPost("refresh")]
-    public async Task<IActionResult> RefreshAsync([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
         var authResult = await _authService.GetRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
 
@@ -59,7 +58,7 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
     }
 
     [HttpPost("revoke-refresh-token")]
-    public async Task<IActionResult> RevokeRefreshTokenAsync([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
+    public async Task<IActionResult> RevokeRefreshToken([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
         var result = await _authService.RevokeRefreshTokenAsync(request.Token, request.RefreshToken, cancellationToken);
 

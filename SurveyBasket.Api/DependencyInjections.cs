@@ -15,6 +15,9 @@ using System.Runtime.CompilerServices;
 using SurveyBasket.Api.Services.VoteService;
 using SurveyBasket.Api.Services.ResultService;
 using SurveyBasket.Api.Services.CacheService;
+using SurveyBasket.Api.Settings;
+using SurveyBasket.Api.Services.EmailService;
+using Microsoft.AspNetCore.Identity.UI.Services;
 
 namespace SurveyBasket.Api;
 
@@ -54,6 +57,7 @@ public static class DependencyInjections
         services.AddScoped<IQuestionService, QuestionService>();
         services.AddScoped<IVoteService, VoteService>();
         services.AddScoped<IResultService, ResultService>();
+        services.AddScoped<IEmailSender, EmailService>();
 
         //  If I Want to Use  DistributedMemoryCache
         //services.AddScoped<ICacheService, CacheService>();
@@ -61,6 +65,11 @@ public static class DependencyInjections
         // Add ExceptionHandler service
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
+
+        // HttpContext Accessor
+        services.AddHttpContextAccessor();
+        // Mail Settings Configuration
+        services.Configure<MailSettings>(configuration.GetSection(nameof(MailSettings)));
 
         return services;
     }
@@ -102,7 +111,8 @@ public static class DependencyInjections
     private static IServiceCollection AddAuthConfig(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddIdentity<ApplicationUser, IdentityRole>()
-            .AddEntityFrameworkStores<ApplicationDbContext>();
+            .AddEntityFrameworkStores<ApplicationDbContext>()
+            .AddDefaultTokenProviders();
 
 
         // Jwt 
@@ -140,6 +150,13 @@ public static class DependencyInjections
              };
          });
 
+        services.Configure<IdentityOptions>(options =>
+        {
+            options.Password.RequiredLength = 8;
+            //options.SignIn.RequireConfirmedEmail = true;
+            options.User.RequireUniqueEmail = true;
+
+        });
 
         return services;
 

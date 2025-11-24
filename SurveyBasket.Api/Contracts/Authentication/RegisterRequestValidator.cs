@@ -1,4 +1,6 @@
-﻿namespace SurveyBasket.Api.Contracts.Authentication
+﻿using SurveyBasket.Api.Abstractions.Consts;
+
+namespace SurveyBasket.Api.Contracts.Authentication
 {
     public class RegisterRequestValidator:AbstractValidator<RegisterRequest>
     {
@@ -12,26 +14,22 @@
             // Password must be provided and at least 6 characters
             RuleFor(x => x.Password)
                 .NotEmpty().WithMessage("Password is required.")
-                .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
+                .Matches(RegexPatterns.Password)
+                .WithMessage("Password should be at least 8 digits and should contains Lowercase, NonAlphanumeric and Uppercase");
 
-            // ConfirmPassword must match Password
-            RuleFor(x => x.ConfirmPassword)
-                .NotEmpty().WithMessage("Confirm password is required.")
-                .Equal(x => x.Password).WithMessage("Passwords do not match.");
+           
 
             // FirstName must be provided
             RuleFor(x => x.FirstName)
-                .NotEmpty().WithMessage("First name is required.");
+                .NotEmpty().WithMessage("First name is required.")
+                .Length(3,100);
 
             // LastName must be provided
             RuleFor(x => x.LastName)
-                .NotEmpty().WithMessage("Last name is required.");
+                .NotEmpty().WithMessage("Last name is required.")
+                .Length(3,100);
 
-            // PhoneNumber is optional but if provided must be a valid phone format
-            RuleFor(x => x.PhoneNumber)
-                .Matches(@"^\+?[0-9]{7,15}$")
-                .When(x => !string.IsNullOrEmpty(x.PhoneNumber))
-                .WithMessage("Invalid phone number format.");
+            
         }
     }
 }

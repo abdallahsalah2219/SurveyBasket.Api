@@ -1,65 +1,121 @@
 ﻿
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.AspNetCore.WebUtilities;
 using SurveyBasket.Api.Authentication;
+using SurveyBasket.Api.Helpers;
 using System.Security.Cryptography;
+using System.Text;
 
 namespace SurveyBasket.Api.Services.AuthService
 {
-    public class AuthService(UserManager<ApplicationUser> userManager, IJwtProvider jwtProvider) : IAuthService
+    public class AuthService(UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager ,
+        IJwtProvider jwtProvider,
+        ILogger<AuthService> logger ,
+        IEmailSender emailSender,
+        IHttpContextAccessor httpContextAccessor) : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
+        private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
         private readonly IJwtProvider _jwtProvider = jwtProvider;
-
+        private readonly ILogger<AuthService> _logger = logger;
+        private readonly IEmailSender _emailSender = emailSender;
+        private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
         private readonly int _refreshTokenExpiryDays=14;
 
-        public async Task<Result<AuthResponse>> RegisterAsync(string email, string password, string firstName, string lastName, string? phoneNumber = null, CancellationToken cancellationToken = default)
+        public async Task<Result>RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
         {
-            // Check if user already exists
-            if (await _userManager.FindByEmailAsync(email) is not null)
-                return Result.Failure<AuthResponse>(UserErrors.EmailAlreadyExist);
+            //Check if Email is exists
+            var emailIsExists = await _userManager.Users.AnyAsync(x =>x.Email ==request.Email);
+            if (emailIsExists) 
+                return Result.Failure(UserErrors.EmailAlreadyExist);
+            // Adapt Request to Application User
+            var user = request.Adapt<ApplicationUser>();
 
-            // Create new user
-            var user = new ApplicationUser
+            //Create User
+            var result = await _userManager.CreateAsync(user, request.Password);
+
+            // Check Result
+            if (result.Succeeded)
             {
-                UserName = email,
-                Email = email,
-                FirstName = firstName,
-                LastName = lastName,
-                PhoneNumber = phoneNumber,
-                EmailConfirmed = true // or false if email confirmation flow required
-            };
+                // Generate a secure email confirmation token for the user
+                var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
 
-            // Attempt to create the user
-            var result = await _userManager.CreateAsync(user, password);
-            if (!result.Succeeded)
-                return Result.Failure<AuthResponse>(UserErrors.InvalidCreateAccount);
+                // Encode the token using Base64 URL-safe format to make it valid inside a URL
+                code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-            // Generate JWT token and refresh token
-            var (token, expiresIn) = _jwtProvider.GenerateToken(user);
-            var refreshToken = GenerateRefreshToken();
-            var refreshTokenExpiration = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays);
+                _logger.LogInformation("Email confirmation code:{Code}",  code);
 
-            // Save refresh token
-            user.RefreshTokens.Add(new RefreshToken
+                // Send Email Confirmation
+                await SendConfirmationEmail(user, code);
+                return Result.Success();
+            }
+            // Return Error If Exists
+            var error = result.Errors.First();
+
+            return Result.Failure(new Error(error.Code , error.Description , StatusCodes.Status400BadRequest));
+        }
+
+        public async Task<Result> ConfirmEmailAsync(ConfirmEmailRequest request)
+        {
+            //Check if User is exists
+            if(await _userManager.FindByIdAsync(request.UserId) is not { } user)
+                return Result.Failure(UserErrors.InvalidCode);
+
+            // Check if User Email is already confirmed
+            if (user.EmailConfirmed)
+                return Result.Failure(UserErrors.DuplicatedConfirmation);
+
+            var code = request.Code;
+
+            // Decode the token from Base64 URL-safe format
+            try
             {
-                Token = refreshToken,
-                ExpiresOn = refreshTokenExpiration
-            });
-            await _userManager.UpdateAsync(user);
+                code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(code));
+            }
+            catch (FormatException)
+            {
+                return Result.Failure(UserErrors.InvalidCode);
+            }
 
-            // Return authentication response
-            var account = new AuthResponse(
-                user.Id,
-                user.Email,
-                user.FirstName,
-                user.LastName,
-                token,
-                expiresIn,
-                refreshToken,
-                refreshTokenExpiration
-            );
+            // Confirm Email
+            var result = await _userManager.ConfirmEmailAsync(user, code);
 
-            return Result.Success(account);
+            if (result.Succeeded)
+                return Result.Success();
+
+            // Return Error If Exists
+            var error = result.Errors.First();
+
+            return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
+        }
+
+        public async Task<Result> ResendConfirmationEmailAsync(ResendConfirmationEmailRequest request) 
+        {
+            //Check if User is exists
+            if (await _userManager.FindByEmailAsync(request.Email) is not { } user)
+                return Result.Success();
+
+            // Check if User Email is already confirmed
+            if (user.EmailConfirmed)
+                return Result.Failure(UserErrors.DuplicatedConfirmation);
+
+            // Generate a secure email confirmation token for the user
+
+            var code = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+            // Encode the token using Base64 URL-safe format to make it valid inside a URL
+
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+            _logger.LogInformation("Email confirmation code:{Code}", code);
+
+            // Send Email Confirmation
+            await SendConfirmationEmail(user, code);
+
+            return Result.Success();
+
         }
 
         public async Task<Result<AuthResponse>> GetTokenAsync(string email, string password, CancellationToken cancellationToken = default)
@@ -68,34 +124,37 @@ namespace SurveyBasket.Api.Services.AuthService
             var user = await _userManager.FindByEmailAsync(email);
             if (user is null) 
                 return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
+
             // Check Password 
-            var isValidPassword = await _userManager.CheckPasswordAsync(user, password);
-            if (!isValidPassword) 
-                return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
+            var result = await _signInManager.PasswordSignInAsync(user, password, false,false);
 
-            // Generate JWT Token
-
-
-            var (token, expiresIn) = _jwtProvider.GenerateToken(user);
-
-            // Generate Refresh Token
-            var refreshToken = GenerateRefreshToken();
-
-            var refreshTokenExpiration = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays);
-
-            // Save in Data Base
-            user.RefreshTokens.Add(new RefreshToken
+            if (result.Succeeded) 
             {
-                Token = refreshToken,
-                ExpiresOn = refreshTokenExpiration
-            });
+                // Generate JWT Token
+                var (token, expiresIn) = _jwtProvider.GenerateToken(user);
 
-            await _userManager.UpdateAsync(user);
+                // Generate Refresh Token
+                var refreshToken = GenerateRefreshToken();
 
-            //return new AuthResponse
-            var result = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration);
-            return Result.Success(result);
+                var refreshTokenExpiration = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays);
 
+                // Save in Data Base
+                user.RefreshTokens.Add(new RefreshToken
+                {
+                    Token = refreshToken,
+                    ExpiresOn = refreshTokenExpiration
+                });
+
+                await _userManager.UpdateAsync(user);
+
+                //return new AuthResponse
+                var response = new AuthResponse(user.Id, user.Email, user.FirstName, user.LastName, token, expiresIn, refreshToken, refreshTokenExpiration);
+                return Result.Success(response);
+            }
+            
+            return Result.Failure<AuthResponse>(result.IsNotAllowed
+                ?UserErrors.EmailNotConfirmed
+                :UserErrors.InvalidCredentials);
         }
         public async Task<Result<AuthResponse>> GetRefreshTokenAsync(string token, string refreshToken, CancellationToken cancellationToken = default)
         {
@@ -174,11 +233,27 @@ namespace SurveyBasket.Api.Services.AuthService
 
 
         }
+        // Generate Refresh Token
         private static string GenerateRefreshToken()
         {
             return Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
         }
 
-        
+        // Send Confirmation Email
+        private async Task SendConfirmationEmail(ApplicationUser user, string code)
+        {
+            var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin;
+
+            var emailBody = EmailBodyBuilder.GenerateEmailBody("EmailConfirmation",
+                templateModel: new Dictionary<string, string>
+                {
+                { "{{name}}", user.FirstName },
+                    { "{{action_url}}", $"{origin}/auth/emailConfirmation?userId={user.Id}&code={code}" }
+                }
+            );
+
+            await _emailSender.SendEmailAsync(user.Email!, "✅ Survey Basket: Email Confirmation", emailBody);
+        }
+
     }
 }
