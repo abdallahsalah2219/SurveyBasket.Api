@@ -1,23 +1,26 @@
-﻿using MapsterMapper;
+﻿using Hangfire;
+using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.UI.Services;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using SurveyBasket.Api.Authentication;
 using SurveyBasket.Api.Persistence;
 using SurveyBasket.Api.Services.AuthService;
-using SurveyBasket.Api.Services.PollService;
-using System.Reflection;
-using Microsoft.IdentityModel.Tokens;
-using Microsoft.Extensions.Options;
-using System.Text;
-using SurveyBasket.Api.Services.QuestionService;
-using System.Runtime.CompilerServices;
-using SurveyBasket.Api.Services.VoteService;
-using SurveyBasket.Api.Services.ResultService;
 using SurveyBasket.Api.Services.CacheService;
-using SurveyBasket.Api.Settings;
 using SurveyBasket.Api.Services.EmailService;
-using Microsoft.AspNetCore.Identity.UI.Services;
+using SurveyBasket.Api.Services.NotificationService;
+using SurveyBasket.Api.Services.PollService;
+using SurveyBasket.Api.Services.QuestionService;
+using SurveyBasket.Api.Services.ResultService;
+using SurveyBasket.Api.Services.VoteService;
+using SurveyBasket.Api.Settings;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Text;
 
 namespace SurveyBasket.Api;
 
@@ -58,6 +61,7 @@ public static class DependencyInjections
         services.AddScoped<IVoteService, VoteService>();
         services.AddScoped<IResultService, ResultService>();
         services.AddScoped<IEmailSender, EmailService>();
+        services.AddScoped<INotificationService, NotificationService>();
 
         //  If I Want to Use  DistributedMemoryCache
         //services.AddScoped<ICacheService, CacheService>();
@@ -66,8 +70,12 @@ public static class DependencyInjections
         services.AddExceptionHandler<GlobalExceptionHandler>();
         services.AddProblemDetails();
 
+        // Add Background Jobs Configuration
+        services.AddBackgroundJobsConfig(configuration);
+
         // HttpContext Accessor
         services.AddHttpContextAccessor();
+
         // Mail Settings Configuration
         services.Configure<MailSettings>(configuration.GetSection(nameof(MailSettings)));
 
@@ -108,6 +116,7 @@ public static class DependencyInjections
         return services;
 
     }
+    // Add Authentication Configuration
     private static IServiceCollection AddAuthConfig(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddIdentity<ApplicationUser, IdentityRole>()
@@ -160,6 +169,22 @@ public static class DependencyInjections
 
         return services;
 
+    }
+    // Add Hangfire Background Jobs Configuration
+    private static IServiceCollection AddBackgroundJobsConfig(this IServiceCollection services, IConfiguration configuration)
+    {
+
+        // Add Hangfire services.
+        services.AddHangfire(config => config
+            .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+            .UseSimpleAssemblyNameTypeSerializer()
+            .UseRecommendedSerializerSettings()
+            .UseSqlServerStorage(configuration.GetConnectionString("HangfireConnection")));
+
+        // Add the processing server as IHostedService
+        services.AddHangfireServer();
+
+        return services;
     }
 
 }

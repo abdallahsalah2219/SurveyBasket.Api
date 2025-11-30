@@ -1,4 +1,5 @@
 ﻿
+using Hangfire;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
@@ -46,6 +47,8 @@ namespace SurveyBasket.Api.Services.AuthService
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
                 _logger.LogInformation("Email confirmation code:{Code}",  code);
+
+
 
                 // Send Email Confirmation
                 await SendConfirmationEmail(user, code);
@@ -252,7 +255,14 @@ namespace SurveyBasket.Api.Services.AuthService
                 }
             );
 
-            await _emailSender.SendEmailAsync(user.Email!, "✅ Survey Basket: Email Confirmation", emailBody);
+            // Background Job To Send Email Confirmation
+            BackgroundJob.Enqueue(() => _emailSender.SendEmailAsync(user.Email!, "✅ Survey Basket: Email Confirmation", emailBody));
+
+            
+            await Task.CompletedTask;
+
+
+
         }
 
     }
