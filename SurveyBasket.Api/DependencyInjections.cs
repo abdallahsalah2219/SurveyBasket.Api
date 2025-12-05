@@ -16,6 +16,7 @@ using SurveyBasket.Api.Services.NotificationService;
 using SurveyBasket.Api.Services.PollService;
 using SurveyBasket.Api.Services.QuestionService;
 using SurveyBasket.Api.Services.ResultService;
+using SurveyBasket.Api.Services.UserService;
 using SurveyBasket.Api.Services.VoteService;
 using SurveyBasket.Api.Settings;
 using System.Reflection;
@@ -62,6 +63,7 @@ public static class DependencyInjections
         services.AddScoped<IResultService, ResultService>();
         services.AddScoped<IEmailSender, EmailService>();
         services.AddScoped<INotificationService, NotificationService>();
+        services.AddScoped<IUserService, UserService>();
 
         //  If I Want to Use  DistributedMemoryCache
         //services.AddScoped<ICacheService, CacheService>();

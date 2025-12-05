@@ -236,6 +236,63 @@ namespace SurveyBasket.Api.Services.AuthService
 
 
         }
+
+        public async Task<Result> SendResetPasswordCodeAsync(string email)
+        {
+            if(await _userManager.FindByEmailAsync(email) is not { } user)
+                return Result.Success();
+
+            if (!user.EmailConfirmed)
+                return Result.Failure(UserErrors.EmailNotConfirmed);
+            // Generate a secure password reset token for the user
+
+            var code = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            // Encode the token using Base64 URL-safe format to make it valid inside a URL
+
+            code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
+
+            _logger.LogInformation("Reset Password confirmation code:{Code}", code);
+
+            // Send Reset Password Confirmation Email
+            await SendResetPasswordEmail(user, code);
+
+            return Result.Success();
+        }
+
+        public async Task<Result> ResetPasswordAsync(ResetPasswordRequest request)
+        {
+            var user = await _userManager.FindByEmailAsync(request.Email);
+
+            if (user is null || !user.EmailConfirmed)
+                return Result.Failure(UserErrors.InvalidCode);
+
+            IdentityResult result;
+
+            try
+            {
+                // Decode the token from Base64 URL-safe format
+                var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(request.Code));
+
+                // Reset Password
+                result = await _userManager.ResetPasswordAsync(user, code, request.NewPassword);
+            }
+            catch (FormatException)
+            {
+                // Invalid Code Format
+                result = IdentityResult.Failed(_userManager.ErrorDescriber.InvalidToken());
+            }
+
+            if (result.Succeeded)
+                return Result.Success();
+
+            var error = result.Errors.First();
+
+            return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status401Unauthorized));
+        }
+
+
+
         // Generate Refresh Token
         private static string GenerateRefreshToken()
         {
@@ -261,9 +318,32 @@ namespace SurveyBasket.Api.Services.AuthService
             
             await Task.CompletedTask;
 
+        }
+
+        
+
+        private async Task SendResetPasswordEmail(ApplicationUser user, string code)
+        {
+            var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin;
+
+            var emailBody = EmailBodyBuilder.GenerateEmailBody("ForgetPassword",
+                templateModel: new Dictionary<string, string>
+                {
+                { "{{name}}", user.FirstName },
+                    { "{{action_url}}", $"{origin}/auth/forgetPassword?email={user.Email}&code={code}" }
+                }
+            );
+
+            // Background Job To Send Reset Password Confirmation Email
+            BackgroundJob.Enqueue(() => _emailSender.SendEmailAsync(user.Email!, "✅ Survey Basket: Change Password", emailBody));
+
+
+            await Task.CompletedTask;
+
 
 
         }
+
 
     }
 }
