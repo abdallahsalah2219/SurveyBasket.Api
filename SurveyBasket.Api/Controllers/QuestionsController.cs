@@ -7,12 +7,13 @@ namespace SurveyBasket.Api.Controllers;
 
 [Route("api/polls/{pollId}/[controller]")]
 [ApiController]
-[Authorize]
+
 public class QuestionsController(IQuestionService questionService) : ControllerBase
 {
     private readonly IQuestionService _questionService = questionService;
 
     [HttpGet("")]
+    [HasPermission(Permissions.GetQuestions)]
 
     public async Task<IActionResult> GetAll([FromRoute] int pollId, CancellationToken cancellationToken)
     {
@@ -24,6 +25,8 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
     }
 
     [HttpGet("{questionId}")]
+    [HasPermission(Permissions.GetPolls)]
+
     public async Task<IActionResult> Get([FromRoute] int pollId, [FromRoute] int questionId ,CancellationToken cancellationToken)
     {
         var result = await _questionService.GetAsync(pollId, questionId, cancellationToken);
@@ -33,6 +36,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
     }
 
     [HttpPost("")]
+    [HasPermission(Permissions.AddQuestions)]
 
     public async Task<IActionResult> Add([FromRoute] int pollId, QuestionRequest request, CancellationToken cancellationToken)
     {
@@ -44,6 +48,7 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
        return result.ToProblem() ;
     }
     [HttpPut("{questionId}")]
+    [HasPermission(Permissions.UpdateQuestions)]
 
     public async Task<IActionResult> Update([FromRoute] int pollId, [FromRoute] int questionId, QuestionRequest request, CancellationToken cancellationToken)
     {
@@ -53,6 +58,8 @@ public class QuestionsController(IQuestionService questionService) : ControllerB
     }
 
     [HttpPut("{questionId}/toggleStatus")]
+    [HasPermission(Permissions.UpdateQuestions)]
+
     public async Task<IActionResult> ToggleStatus([FromRoute] int pollId, [FromRoute] int questionId, CancellationToken cancellationToken)
     {
         var result = await _questionService.ToggleActiveStatusAsync(pollId, questionId, cancellationToken);

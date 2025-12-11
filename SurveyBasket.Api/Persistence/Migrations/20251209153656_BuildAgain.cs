@@ -3,10 +3,12 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional
+
 namespace SurveyBasket.Api.Persistence.Migrations
 {
     /// <inheritdoc />
-    public partial class Init : Migration
+    public partial class BuildAgain : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -16,6 +18,8 @@ namespace SurveyBasket.Api.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    IsDefault = table.Column<bool>(type: "bit", nullable: false),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     Name = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "nvarchar(max)", nullable: true)
@@ -30,9 +34,8 @@ namespace SurveyBasket.Api.Persistence.Migrations
                 columns: table => new
                 {
                     Id = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Discriminator = table.Column<string>(type: "nvarchar(21)", maxLength: 21, nullable: false),
-                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
-                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: true),
+                    FirstName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    LastName = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     UserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: true),
@@ -330,6 +333,46 @@ namespace SurveyBasket.Api.Persistence.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
+
+            migrationBuilder.InsertData(
+                table: "AspNetRoles",
+                columns: new[] { "Id", "ConcurrencyStamp", "IsDefault", "IsDeleted", "Name", "NormalizedName" },
+                values: new object[,]
+                {
+                    { "019affbb-0040-7a51-a55f-2bd274e01154", "019affbd-205b-77fa-8754-06662cee7427", false, false, "Admin", "ADMIN" },
+                    { "019affbb-8eba-756c-979b-959b001af7dc", "019affbd-432d-7157-8fb7-510db9dfffb7", true, false, "Member", "MEMBER" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUsers",
+                columns: new[] { "Id", "AccessFailedCount", "ConcurrencyStamp", "Email", "EmailConfirmed", "FirstName", "LastName", "LockoutEnabled", "LockoutEnd", "NormalizedEmail", "NormalizedUserName", "PasswordHash", "PhoneNumber", "PhoneNumberConfirmed", "SecurityStamp", "TwoFactorEnabled", "UserName" },
+                values: new object[] { "019aff80-28d6-784e-b052-5bbce3113686", 0, "019aff84-4a65-78d1-ad14-5ca8bfec981c", "admin@survey-basket.com", true, "Survey Basket", "Admin", false, null, "ADMIN@SURVEY-BASKET.COM", "ADMIN@SURVEY-BASKET.COM", "AQAAAAIAAYagAAAAEOTAQFBJFQd1My+yBLNMnC2h99j9h4A1a+jYcLG2bJqWTgWyMqyil1vzIW+GOwdfMA==", null, false, "D3835D44DA134204B4A997BE93BC83FF", false, "admin@survey-basket.com" });
+
+            migrationBuilder.InsertData(
+                table: "AspNetRoleClaims",
+                columns: new[] { "Id", "ClaimType", "ClaimValue", "RoleId" },
+                values: new object[,]
+                {
+                    { 1, "Permissions", "polls:read", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 2, "Permissions", "polls:add", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 3, "Permissions", "polls:update", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 4, "Permissions", "polls:delete", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 5, "Permissions", "questions:read", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 6, "Permissions", "questions:add", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 7, "Permissions", "questions:update", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 8, "Permissions", "users:read", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 9, "Permissions", "users:add", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 10, "Permissions", "users:update", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 11, "Permissions", "roles:read", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 12, "Permissions", "roles:add", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 13, "Permissions", "roles:update", "019affbb-0040-7a51-a55f-2bd274e01154" },
+                    { 14, "Permissions", "results:read", "019affbb-0040-7a51-a55f-2bd274e01154" }
+                });
+
+            migrationBuilder.InsertData(
+                table: "AspNetUserRoles",
+                columns: new[] { "RoleId", "UserId" },
+                values: new object[] { "019affbb-0040-7a51-a55f-2bd274e01154", "019aff80-28d6-784e-b052-5bbce3113686" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Answers_QuestionId_Content",

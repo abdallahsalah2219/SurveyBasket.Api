@@ -1,6 +1,4 @@
-﻿
-using Hangfire;
-using Microsoft.AspNetCore.Identity;
+﻿using Hangfire;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.WebUtilities;
 using SurveyBasket.Api.Authentication;
@@ -15,7 +13,8 @@ namespace SurveyBasket.Api.Services.AuthService
         IJwtProvider jwtProvider,
         ILogger<AuthService> logger ,
         IEmailSender emailSender,
-        IHttpContextAccessor httpContextAccessor) : IAuthService
+        IHttpContextAccessor httpContextAccessor,
+        ApplicationDbContext context) : IAuthService
     {
         private readonly UserManager<ApplicationUser> _userManager = userManager;
         private readonly SignInManager<ApplicationUser> _signInManager = signInManager;
@@ -23,6 +22,9 @@ namespace SurveyBasket.Api.Services.AuthService
         private readonly ILogger<AuthService> _logger = logger;
         private readonly IEmailSender _emailSender = emailSender;
         private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
+        private readonly ApplicationDbContext _context = context;
+
+
         private readonly int _refreshTokenExpiryDays=14;
 
         public async Task<Result>RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
@@ -86,7 +88,11 @@ namespace SurveyBasket.Api.Services.AuthService
             var result = await _userManager.ConfirmEmailAsync(user, code);
 
             if (result.Succeeded)
+            {
+                // Assign Member Role (Default Role) To Anyone Who Confirmed His Email After Register
+                await _userManager.AddToRoleAsync(user, DefaultRoles.Member);
                 return Result.Success();
+            }
 
             // Return Error If Exists
             var error = result.Errors.First();
@@ -133,8 +139,10 @@ namespace SurveyBasket.Api.Services.AuthService
 
             if (result.Succeeded) 
             {
+
+                var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
                 // Generate JWT Token
-                var (token, expiresIn) = _jwtProvider.GenerateToken(user);
+                var (token, expiresIn) = _jwtProvider.GenerateToken(user , userRoles , userPermissions);
 
                 // Generate Refresh Token
                 var refreshToken = GenerateRefreshToken();
@@ -168,7 +176,7 @@ namespace SurveyBasket.Api.Services.AuthService
                 return Result.Failure<AuthResponse>(UserErrors.InvalidJwtToken);
 
             // Get User By userId
-            var user= await _userManager.FindByIdAsync(userId);
+            var user = await _userManager.FindByIdAsync(userId);
 
             if (user is null)
                 return Result.Failure<AuthResponse>(UserErrors.InvalidJwtToken);
@@ -180,11 +188,10 @@ namespace SurveyBasket.Api.Services.AuthService
 
             userRefreshToken.RevokedOn = DateTime.UtcNow;
 
+            var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
 
             // Generate New JWT Token
-
-
-            var (newToken, expiresIn) = _jwtProvider.GenerateToken(user);
+            var (newToken, expiresIn) = _jwtProvider.GenerateToken(user , userRoles , userPermissions);
 
             // Generate New Refresh Token
             var newRefreshToken = GenerateRefreshToken();
@@ -206,7 +213,7 @@ namespace SurveyBasket.Api.Services.AuthService
 
         }
 
-       
+
         public async Task<Result> RevokeRefreshTokenAsync(string token, string refreshToken, CancellationToken cancellationToken = default)
         {
             var userId = _jwtProvider.ValidateToken(token);
@@ -340,8 +347,33 @@ namespace SurveyBasket.Api.Services.AuthService
 
             await Task.CompletedTask;
 
+        }
+        private async Task<(IEnumerable<string> roles, IEnumerable<string> permissions)> GetUserRolesAndPermissions(ApplicationUser user, CancellationToken cancellationToken)
+        {
+            var userRoles = await _userManager.GetRolesAsync(user);
 
+            //var userPermissions = await _context.Roles
+            //    .Join(_context.RoleClaims,
+            //        role => role.Id,
+            //        claim => claim.RoleId,
+            //        (role, claim) => new { role, claim }
+            //    )
+            //    .Where(x => userRoles.Contains(x.role.Name!))
+            //    .Select(x => x.claim.ClaimValue!)
+            //    .Distinct()
+            //    .ToListAsync(cancellationToken);
 
+             
+            //  Get Permissions By LINQ Query Syntax  
+            var userPermissions = await (from r in _context.Roles
+                                         join p in _context.RoleClaims
+                                         on r.Id equals p.RoleId
+                                         where userRoles.Contains(r.Name!)
+                                         select p.ClaimValue!)
+                                         .Distinct()
+                                         .ToListAsync(cancellationToken);
+
+            return (userRoles, userPermissions);
         }
 
 

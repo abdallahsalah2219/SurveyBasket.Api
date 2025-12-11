@@ -46,7 +46,7 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
         : authResult.ToProblem( );
            
     }
-    
+
     [HttpPost("refresh")]
     public async Task<IActionResult> Refresh([FromBody] RefreshTokenRequest request, CancellationToken cancellationToken)
     {
@@ -86,4 +86,6 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
             ? Ok()
             : result.ToProblem();
     }
+
+    
 }

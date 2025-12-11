@@ -10,7 +10,7 @@ namespace SurveyBasket.Api.Services.QuestionService;
 public class QuestionService(
     ApplicationDbContext context
     , HybridCache hybridCache
-    ,ILogger<QuestionService> logger) : IQuestionService
+    , ILogger<QuestionService> logger) : IQuestionService
 {
     private readonly ApplicationDbContext _context = context;
     private readonly HybridCache _hybridCache = hybridCache;
@@ -29,12 +29,11 @@ public class QuestionService(
         var questions = await _context.Questions
             .Where(x => x.PollId == pollId)
             .Include(x => x.Answers)
-            //.Select(q=> new QuestionResponse(
-            //    q.Id,
-            //    q.Content,
-            //    q.Answers.Select(a => new AnswerResponse(a.Id, a.Content ))
-            //    ))
-            .ProjectToType<QuestionResponse>()
+            .Select(q => new QuestionResponse(
+                             q.Id,
+                             q.Content,
+                             q.Answers.Select(a => new AnswerResponse(a.Id, a.Content))
+                             ))
             .AsNoTracking().ToListAsync(cancellationToken);
 
         return Result.Success<IEnumerable<QuestionResponse>>(questions);
@@ -75,7 +74,7 @@ public class QuestionService(
                 //}
                 );
 
-        
+
 
         return Result.Success(questions);
     }
@@ -89,7 +88,11 @@ public class QuestionService(
         var question = await _context.Questions
             .Where(x => x.PollId == pollId && x.Id == questionId)
             .Include(x => x.Answers)
-            .ProjectToType<QuestionResponse>()
+            .Select(q => new QuestionResponse(
+                      q.Id,
+                      q.Content,
+                      q.Answers.Select(a => new AnswerResponse(a.Id, a.Content))
+                    ))
             .AsNoTracking()
             .SingleOrDefaultAsync(cancellationToken);
 
