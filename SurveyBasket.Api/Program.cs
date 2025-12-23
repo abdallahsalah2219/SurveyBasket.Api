@@ -1,9 +1,10 @@
 using Hangfire;
-using Hangfire.Dashboard;
 using HangfireBasicAuthenticationFilter;
 using Serilog;
 using SurveyBasket.Api;
 using SurveyBasket.Api.Services.NotificationService;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using HealthChecks.UI.Client;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -70,4 +71,9 @@ app.MapControllers();
 
 app.UseExceptionHandler();
 
+// route of health check (https://localhost:7270/health)
+app.MapHealthChecks("health", new HealthCheckOptions 
+{
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse    
+});
 app.Run();

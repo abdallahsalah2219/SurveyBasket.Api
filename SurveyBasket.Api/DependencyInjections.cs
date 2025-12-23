@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using SurveyBasket.Api.Authentication;
+using SurveyBasket.Api.Health;
 using SurveyBasket.Api.Persistence;
 using SurveyBasket.Api.Services.AuthService;
 using SurveyBasket.Api.Services.CacheService;
@@ -83,6 +84,12 @@ public static class DependencyInjections
 
         // Mail Settings Configuration
         services.Configure<MailSettings>(configuration.GetSection(nameof(MailSettings)));
+
+        // Health Checks Configuration service and DbContext Check and Hangfire Check and Mail Service Check
+        services.AddHealthChecks()
+            .AddSqlServer(name:"database",connectionString:configuration.GetConnectionString("DefaultConnection")!)
+            .AddHangfire(optionx => { optionx.MinimumAvailableServers = 1; })
+            .AddCheck<MailProviderHealthCheck>(name:"Mail Service");
 
         return services;
     }
