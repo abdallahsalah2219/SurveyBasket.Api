@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 using SurveyBasket.Api.Authentication;
 using SurveyBasket.Api.Contracts.Authentication;
 using SurveyBasket.Api.Services.AuthService;
@@ -8,12 +9,14 @@ namespace SurveyBasket.Api.Controllers;
 
 [Route("[controller]")]
 [ApiController]
+[EnableRateLimiting("ipLimit")]
 public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwtOptions*/) : ControllerBase
 {
     private readonly IAuthService _authService = authService;
     //private readonly JwtOptions _jwtOptions = jwtOptions.Value;
 
     [HttpPost("register")]
+    [DisableRateLimiting]
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
         var result = await _authService.RegisterAsync(request, cancellationToken);
@@ -87,5 +90,16 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
             : result.ToProblem();
     }
 
-    
+
+    // Test Rate Limiting Endpoint 
+    //[HttpGet("testRateLimiting")]
+    //[EnableRateLimiting("concurrency")]
+    //public async Task<IActionResult> TestRateLimiting()
+    //{
+    //    // Simulate some processing time
+    //    await Task.Delay(6000);
+    //    return Ok("Request succeeded!");
+    //}
+
+
 }

@@ -71,6 +71,8 @@ app.MapControllers();
 
 app.UseExceptionHandler();
 
+app.UseRateLimiter();
+
 // route of health check (https://localhost:7270/health)
 app.MapHealthChecks("health", new HealthCheckOptions 
 {
