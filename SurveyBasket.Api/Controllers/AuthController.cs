@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.RateLimiting;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.Options;
 using SurveyBasket.Api.Authentication;
 using SurveyBasket.Api.Contracts.Authentication;
@@ -7,7 +8,8 @@ using System.Diagnostics;
 
 namespace SurveyBasket.Api.Controllers;
 
-[Route("[controller]")]
+[ApiVersion(1)]
+[Route("v{v:apiVersion}/[controller]")]
 [ApiController]
 [EnableRateLimiting("ipLimit")]
 public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwtOptions*/) : ControllerBase

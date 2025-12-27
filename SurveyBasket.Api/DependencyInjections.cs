@@ -1,4 +1,5 @@
-﻿using Hangfire;
+﻿using Asp.Versioning;
+using Hangfire;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -53,7 +54,8 @@ public static class DependencyInjections
 
         services.AddSwaggerServices()
             .AddMapsterConfig()
-            .AddFluentValidationConfig();
+            .AddFluentValidationConfig()
+            .AddRateLimitingConfig();
 
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IPollService, PollService>();
@@ -88,82 +90,14 @@ public static class DependencyInjections
             .AddHangfire(optionx => { optionx.MinimumAvailableServers = 1; })
             .AddCheck<MailProviderHealthCheck>(name:"Mail Service");
 
-        // Add Rate Limiter Configuration
-        services.AddRateLimiter(rateLimiterOptions =>
+        // Add ApiVersioning Configuration
+        services.AddApiVersioning(options => 
         {
-            // Rejection Status Code Configuration (429 Too Many Requests) 
-            rateLimiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
-
-            // IP Based Rate Limiting Policy
-            rateLimiterOptions.AddPolicy("ipLimit", httpContext =>
-                     RateLimitPartition.GetFixedWindowLimiter
-                     (
-                         partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
-                         factory: _ => new FixedWindowRateLimiterOptions
-                         {
-                             PermitLimit = 2,
-                             Window = TimeSpan.FromSeconds(20),
-                             
-                         }
-                     )
-            );
-
-            // User Limit Configuration 
-            rateLimiterOptions.AddPolicy("userLimit", httpContext =>
-                     RateLimitPartition.GetFixedWindowLimiter
-                     (
-                         partitionKey: httpContext.User.GetUserId(),
-                         factory: _ => new FixedWindowRateLimiterOptions
-                         {
-                             PermitLimit = 2,
-                             Window = TimeSpan.FromSeconds(20),
-                             
-                         }
-                     )
-            );
-
-             // Concurrency Limiter Configuration
-            rateLimiterOptions.AddConcurrencyLimiter("concurrency", options =>
-            {
-                options.PermitLimit = 1000;
-                options.QueueLimit = 100;
-                options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            });
-            
-
-            #region Token Bucket Limiter Configuration
-            //rateLimiterOptions.AddTokenBucketLimiter("token", options => 
-            //{
-            //    options.TokenLimit = 100;
-            //    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            //    options.QueueLimit = 50;
-            //    options.ReplenishmentPeriod = TimeSpan.FromSeconds(30);
-            //    options.TokensPerPeriod = 2;
-            //    options.AutoReplenishment = true;
-            //});
-            #endregion
-
-            #region Fixed Window Limiter Configuration
-            //rateLimiterOptions.AddFixedWindowLimiter("fixed", options =>
-            //{
-            //    options.PermitLimit = 100;
-            //    options.QueueLimit = 50;
-            //    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            //    options.Window = TimeSpan.FromMinutes(1);
-            //});
-            #endregion
-
-            #region Sliding Window Limiter Configuration
-            //rateLimiterOptions.AddSlidingWindowLimiter("sliding", options =>
-            //{
-            //    options.PermitLimit = 100;
-            //    options.QueueLimit = 50;
-            //    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
-            //    options.Window = TimeSpan.FromSeconds(20);
-            //    options.SegmentsPerWindow = 2; // 2 segments of 10 seconds each
-            //});
-            #endregion
-
+            options.ApiVersionReader = new UrlSegmentApiVersionReader();
+        }).AddApiExplorer(options => 
+        {
+            options.GroupNameFormat = "'v'V";
+            options.SubstituteApiVersionInUrl = true;
         });
 
         return services;
@@ -274,6 +208,87 @@ public static class DependencyInjections
         // Add the processing server as IHostedService
         services.AddHangfireServer();
 
+        return services;
+    }
+    private static IServiceCollection AddRateLimitingConfig(this IServiceCollection services)
+    {
+        // Add Rate Limiter Configuration
+        services.AddRateLimiter(rateLimiterOptions =>
+        {
+            // Rejection Status Code Configuration (429 Too Many Requests) 
+            rateLimiterOptions.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+            // IP Based Rate Limiting Policy
+            rateLimiterOptions.AddPolicy("ipLimit", httpContext =>
+                     RateLimitPartition.GetFixedWindowLimiter
+                     (
+                         partitionKey: httpContext.Connection.RemoteIpAddress?.ToString(),
+                         factory: _ => new FixedWindowRateLimiterOptions
+                         {
+                             PermitLimit = 2,
+                             Window = TimeSpan.FromSeconds(20),
+
+                         }
+                     )
+            );
+
+            // User Limit Configuration 
+            rateLimiterOptions.AddPolicy("userLimit", httpContext =>
+                     RateLimitPartition.GetFixedWindowLimiter
+                     (
+                         partitionKey: httpContext.User.GetUserId(),
+                         factory: _ => new FixedWindowRateLimiterOptions
+                         {
+                             PermitLimit = 2,
+                             Window = TimeSpan.FromSeconds(20),
+
+                         }
+                     )
+            );
+
+            // Concurrency Limiter Configuration
+            rateLimiterOptions.AddConcurrencyLimiter("concurrency", options =>
+            {
+                options.PermitLimit = 1000;
+                options.QueueLimit = 100;
+                options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            });
+
+
+            #region Token Bucket Limiter Configuration
+            //rateLimiterOptions.AddTokenBucketLimiter("token", options => 
+            //{
+            //    options.TokenLimit = 100;
+            //    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            //    options.QueueLimit = 50;
+            //    options.ReplenishmentPeriod = TimeSpan.FromSeconds(30);
+            //    options.TokensPerPeriod = 2;
+            //    options.AutoReplenishment = true;
+            //});
+            #endregion
+
+            #region Fixed Window Limiter Configuration
+            //rateLimiterOptions.AddFixedWindowLimiter("fixed", options =>
+            //{
+            //    options.PermitLimit = 100;
+            //    options.QueueLimit = 50;
+            //    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            //    options.Window = TimeSpan.FromMinutes(1);
+            //});
+            #endregion
+
+            #region Sliding Window Limiter Configuration
+            //rateLimiterOptions.AddSlidingWindowLimiter("sliding", options =>
+            //{
+            //    options.PermitLimit = 100;
+            //    options.QueueLimit = 50;
+            //    options.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+            //    options.Window = TimeSpan.FromSeconds(20);
+            //    options.SegmentsPerWindow = 2; // 2 segments of 10 seconds each
+            //});
+            #endregion
+
+        });
         return services;
     }
 

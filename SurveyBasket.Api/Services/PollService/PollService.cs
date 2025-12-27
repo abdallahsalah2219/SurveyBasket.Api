@@ -16,15 +16,42 @@ public class PollService(ApplicationDbContext context ,INotificationService noti
     public async Task<IEnumerable<PollResponse>> GetAllAsync(CancellationToken cancellationToken = default) =>
         await _context.Polls
         .AsNoTracking()
-        .ProjectToType<PollResponse>()
+        .Select(x => new PollResponse(
+            x.Id,
+            x.Title,
+            x.Summary,
+            x.IsPublished,
+            x.StartAt,
+            x.EndsAt
+        ))
         .ToListAsync(cancellationToken);
 
-    public async Task<IEnumerable<PollResponse>> GetCurrentPollsAsync(CancellationToken cancellationToken = default)=>
+    public async Task<IEnumerable<PollResponse>> GetCurrentPollsAsyncV1(CancellationToken cancellationToken = default)=>
     
          await _context.Polls
          .Where(x => x.IsPublished && x.StartAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow))
             .AsNoTracking()
-            .ProjectToType<PollResponse>()
+            .Select(x => new PollResponse(
+            x.Id,
+            x.Title,
+            x.Summary,
+            x.IsPublished,
+            x.StartAt,
+            x.EndsAt
+        ))
+            .ToListAsync(cancellationToken);
+    public async Task<IEnumerable<PollResponseV2>> GetCurrentPollsAsyncV2(CancellationToken cancellationToken = default)=>
+    
+         await _context.Polls
+         .Where(x => x.IsPublished && x.StartAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow))
+            .AsNoTracking()
+            .Select(x => new PollResponseV2(
+            x.Id,
+            x.Title,
+            x.Summary,
+            x.StartAt,
+            x.EndsAt
+        ))
             .ToListAsync(cancellationToken);
 
 
