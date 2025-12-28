@@ -6,7 +6,7 @@ namespace SurveyBasket.Api.Controllers;
 
 
 
-[Route("api/polls/{pollId}/[controller]")]
+[Route("api/v{v:apiVersion}/polls/{pollId}/[controller]")]
 [ApiController]
 [Authorize(Roles = DefaultRoles.Member)]
 [EnableRateLimiting("concurrency")]
@@ -15,6 +15,7 @@ public class VotesController(IQuestionService questionService , IVoteService vot
     private readonly IQuestionService _questionService = questionService;
     private readonly IVoteService _voteService = voteService;
 
+    
     [HttpGet("")]
     public async Task<IActionResult> Start([FromRoute] int pollId, CancellationToken cancellationToken)
     {

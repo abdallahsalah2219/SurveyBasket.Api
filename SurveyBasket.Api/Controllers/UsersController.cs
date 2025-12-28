@@ -4,7 +4,7 @@ using SurveyBasket.Api.Services.UserService;
 namespace SurveyBasket.Api.Controllers;
 
 
-[Route("api/[controller]")]
+[Route("api/v{v:apiVersion}/[controller]")]
 [ApiController]
 [HasPermission(Permissions.GetUsers)]
 public class UsersController(IUserService userService) : ControllerBase

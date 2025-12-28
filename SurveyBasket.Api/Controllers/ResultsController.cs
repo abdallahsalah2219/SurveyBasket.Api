@@ -4,7 +4,7 @@ using SurveyBasket.Api.Services.ResultService;
 
 namespace SurveyBasket.Api.Controllers;
 
-[Route("api/polls/{pollId}/[controller]")]
+[Route("api/v{v:apiVersion}/polls/{pollId}/[controller]")]
 [ApiController]
 [HasPermission(Permissions.Results)]
 

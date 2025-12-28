@@ -4,7 +4,7 @@ using SurveyBasket.Api.Services.RoleService;
 namespace SurveyBasket.Api.Controllers;
 
 
-[Route("api/[controller]")]
+[Route("api/v{v:apiVersion}/[controller]")]
 [ApiController]
 [HasPermission(Permissions.GetRoles)]
 public class RolesController(IRoleService roleService) : ControllerBase

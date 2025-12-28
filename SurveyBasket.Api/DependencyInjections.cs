@@ -19,6 +19,8 @@ using SurveyBasket.Api.Services.RoleService;
 using SurveyBasket.Api.Services.UserService;
 using SurveyBasket.Api.Services.VoteService;
 using SurveyBasket.Api.Settings;
+using SurveyBasket.Swagger;
+using Swashbuckle.AspNetCore.SwaggerGen;
 using System.Reflection;
 using System.Text;
 using System.Threading.RateLimiting;
@@ -108,8 +110,33 @@ public static class DependencyInjections
 
         // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
+        services.AddSwaggerGen(options =>
+        {
+            //options.SwaggerDoc("v1", new OpenApiInfo
+            //{
+            //    Version = "v1",
+            //    Title = "ToDo API",
+            //    Description = "An ASP.NET Core Web API for managing ToDo items",
+            //    TermsOfService = new Uri("https://example.com/terms"),
+            //    Contact = new OpenApiContact
+            //    {
+            //        Name = "Example Contact",
+            //        Url = new Uri("https://example.com/contact")
+            //    },
+            //    License = new OpenApiLicense
+            //    {
+            //        Name = "Example License",
+            //        Url = new Uri("https://example.com/license")
+            //    }
+            //});
 
+            var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+
+            options.OperationFilter<SwaggerDefaultValues>();
+        });
+
+        services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
         return services;
     }
     private static IServiceCollection AddMapsterConfig(this IServiceCollection services)
@@ -120,6 +147,8 @@ public static class DependencyInjections
         mappingConfig.Scan(Assembly.GetExecutingAssembly());
         services.AddSingleton<IMapper>(new Mapper(mappingConfig));
 
+
+        
         return services;
 
     }
