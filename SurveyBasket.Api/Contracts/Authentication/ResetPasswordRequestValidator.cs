@@ -1,6 +1,4 @@
-﻿using SurveyBasket.Api.Abstractions.Consts;
-
-namespace SurveyBasket.Api.Contracts.Authentication;
+﻿namespace SurveyBasket.Api.Contracts.Authentication;
 
 public class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequest>
 {
@@ -13,7 +11,7 @@ public class ResetPasswordRequestValidator : AbstractValidator<ResetPasswordRequ
 
         RuleFor(x => x.Code)
            .NotEmpty();
-           
+
 
         // Password must be provided and at least 6 characters
         RuleFor(x => x.NewPassword)

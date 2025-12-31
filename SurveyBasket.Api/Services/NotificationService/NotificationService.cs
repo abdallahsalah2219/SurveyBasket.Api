@@ -1,6 +1,4 @@
-﻿
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Identity.UI.Services;
+﻿using Microsoft.AspNetCore.Identity.UI.Services;
 using SurveyBasket.Api.Helpers;
 
 namespace SurveyBasket.Api.Services.NotificationService;
@@ -8,7 +6,7 @@ namespace SurveyBasket.Api.Services.NotificationService;
 public class NotificationService(
     ApplicationDbContext context,
     UserManager<ApplicationUser> userManager,
-   IHttpContextAccessor httpContextAccessor ,
+   IHttpContextAccessor httpContextAccessor,
    IEmailSender emailSender
     ) : INotificationService
 {
@@ -19,9 +17,9 @@ public class NotificationService(
 
     public async Task SendNewPollsNotification(int? pollId = null)
     {
-        
+
         IEnumerable<Poll> polls = [];
-         
+
         if (pollId.HasValue)
         {
             // Get the specific poll by Id if provided
@@ -32,7 +30,7 @@ public class NotificationService(
 
         }
 
-        else 
+        else
         {
             // Get all polls that are published and start today
             polls = await _context.Polls
@@ -41,9 +39,8 @@ public class NotificationService(
                 .ToListAsync();
         }
 
-        // TODO : Selet members only 
-
-        var users = await _userManager.Users.ToListAsync();
+        //  Select members only 
+        var users = await _userManager.GetUsersInRoleAsync(DefaultRoles.Member);
 
         var origin = _httpContextAccessor.HttpContext?.Request.Headers.Origin;
 

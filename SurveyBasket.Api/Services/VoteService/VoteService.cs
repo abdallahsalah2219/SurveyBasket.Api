@@ -1,5 +1,4 @@
-﻿using SurveyBasket.Api.Contracts.Questions;
-using SurveyBasket.Api.Contracts.Votes;
+﻿using SurveyBasket.Api.Contracts.Votes;
 
 namespace SurveyBasket.Api.Services.VoteService;
 
@@ -19,8 +18,8 @@ public class VoteService(ApplicationDbContext context) : IVoteService
 
 
         var availableQuestions = await _context.Questions
-            .Where( x=>x.PollId==pollId && x.IsActive)
-            .Select(x=>x.Id)
+            .Where(x => x.PollId == pollId && x.IsActive)
+            .Select(x => x.Id)
             .ToListAsync(cancellationToken);
 
         if (!request.Answers.Select(x => x.QuestionId).SequenceEqual(availableQuestions))

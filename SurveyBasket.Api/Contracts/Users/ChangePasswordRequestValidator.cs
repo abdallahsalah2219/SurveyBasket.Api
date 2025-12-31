@@ -1,6 +1,4 @@
-﻿using SurveyBasket.Api.Abstractions.Consts;
-
-namespace SurveyBasket.Api.Contracts.Users;
+﻿namespace SurveyBasket.Api.Contracts.Users;
 
 public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRequest>
 {
@@ -9,7 +7,7 @@ public class ChangePasswordRequestValidator : AbstractValidator<ChangePasswordRe
 
         RuleFor(x => x.CurrentPassword)
             .NotEmpty();
-            
+
 
 
         RuleFor(x => x.NewPassword)

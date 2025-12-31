@@ -7,7 +7,7 @@ public class PollRequestValidator : AbstractValidator<PollRequest>
         RuleFor(x => x.Title)
             .NotEmpty()
             .Length(3, 100);
-        
+
         RuleFor(x => x.Summary)
             .NotEmpty()
             .Length(3, 1500);
@@ -29,7 +29,7 @@ public class PollRequestValidator : AbstractValidator<PollRequest>
 
     private bool HasValidDates(PollRequest pollRequest)
     {
-        return pollRequest.EndsAt>= pollRequest.StartAt;
+        return pollRequest.EndsAt >= pollRequest.StartAt;
     }
 }
 

@@ -27,9 +27,9 @@ public class CreateUserRequestValidator : AbstractValidator<CreateUserRequest>
             .NotNull();
 
         RuleFor(x => x.Roles)
-            .Must(x=>x.Distinct().Count() ==x.Count)
+            .Must(x => x.Distinct().Count() == x.Count)
             .WithMessage("you can not dublicated role for the same user")
-            .When(x=>x.Roles != null);
-            
+            .When(x => x.Roles != null);
+
     }
 }

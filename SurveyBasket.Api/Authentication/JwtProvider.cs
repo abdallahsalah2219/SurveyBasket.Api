@@ -11,7 +11,7 @@ public class JwtProvider(IOptions<JwtOptions> jwtOptions) : IJwtProvider
 {
     public JwtOptions _jwtOptions = jwtOptions.Value;
 
-    public (string token, int expiresIn) GenerateToken(ApplicationUser user , IEnumerable<string> roles , IEnumerable<string> permissions)
+    public (string token, int expiresIn) GenerateToken(ApplicationUser user, IEnumerable<string> roles, IEnumerable<string> permissions)
     {
         Claim[] claims =
             [
@@ -51,17 +51,17 @@ public class JwtProvider(IOptions<JwtOptions> jwtOptions) : IJwtProvider
             tokenHandler.ValidateToken(token, new TokenValidationParameters
             {
                 IssuerSigningKey = symmetricSecurityKey,
-                ValidateIssuerSigningKey =true,
-                ValidateIssuer=false,
-                ValidateAudience=false,
-                ClockSkew=TimeSpan.Zero
-            },out SecurityToken validatedToken);
+                ValidateIssuerSigningKey = true,
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
 
             var jwtToken = (JwtSecurityToken)validatedToken;
 
-            return jwtToken.Claims.First(x=>x.Type== JwtRegisteredClaimNames.Sub).Value;
+            return jwtToken.Claims.First(x => x.Type == JwtRegisteredClaimNames.Sub).Value;
         }
-        catch 
+        catch
         {
 
             return null;

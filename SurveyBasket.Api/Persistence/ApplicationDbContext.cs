@@ -4,8 +4,8 @@ using System.Reflection;
 
 namespace SurveyBasket.Api.Persistence;
 
-public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options ,IHttpContextAccessor httpContextAccessor)
-    : IdentityDbContext<ApplicationUser , ApplicationRole , string>(options)
+public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, IHttpContextAccessor httpContextAccessor)
+    : IdentityDbContext<ApplicationUser, ApplicationRole, string>(options)
 {
     private readonly IHttpContextAccessor _httpContextAccessor = httpContextAccessor;
 
@@ -25,8 +25,8 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             .Where(fk => fk.DeleteBehavior == DeleteBehavior.Cascade && !fk.IsOwnership);
 
         foreach (var fk in cascadeFKs)
-           fk.DeleteBehavior = DeleteBehavior.Restrict;
-        
+            fk.DeleteBehavior = DeleteBehavior.Restrict;
+
 
         base.OnModelCreating(modelBuilder);
     }

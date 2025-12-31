@@ -8,8 +8,8 @@ public class PollConfiguration : IEntityTypeConfiguration<Poll>
             .IsUnique();
 
         builder.Property(x => x.Title)
-            .HasMaxLength(100);    
-        
+            .HasMaxLength(100);
+
         builder.Property(x => x.Summary)
             .HasMaxLength(1500);
     }

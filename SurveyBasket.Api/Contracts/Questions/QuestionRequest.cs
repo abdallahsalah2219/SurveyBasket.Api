@@ -1,8 +1,8 @@
 ﻿namespace SurveyBasket.Api.Contracts.Questions;
 
-public record QuestionRequest 
+public record QuestionRequest
     (
-    string Content ,
+    string Content,
     List<string> Answers
     );
 

@@ -14,8 +14,8 @@ public static class ResultExtensions
         problemDetails!.Extensions = new Dictionary<string, object?>
           {
               {
-                  "errors" ,new[] 
-                  { 
+                  "errors" ,new[]
+                  {
                       result.Error.Code,
                       result.Error.Description
                   }

@@ -2,20 +2,20 @@
 
 public record PollResponse
 (
-     int Id ,
+     int Id,
      string Title,
-     string Summary ,
-     bool IsPublished ,
-     DateOnly StartAt ,
-     DateOnly EndsAt 
+     string Summary,
+     bool IsPublished,
+     DateOnly StartAt,
+     DateOnly EndsAt
 
 );
 public record PollResponseV2
 (
-     int Id ,
+     int Id,
      string Title,
-     string Summary ,
-     DateOnly StartAt ,
-     DateOnly EndsAt 
+     string Summary,
+     DateOnly StartAt,
+     DateOnly EndsAt
 
 );

@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
-
-namespace SurveyBasket.Api.Persistence.EntitiesConfiguration;
+﻿namespace SurveyBasket.Api.Persistence.EntitiesConfiguration;
 
 public class RoleClaimConfiguration : IEntityTypeConfiguration<IdentityRoleClaim<string>>
 {

@@ -1,8 +1,8 @@
-﻿using System.Linq.Dynamic.Core;
-using Microsoft.Extensions.Caching.Hybrid;
+﻿using Microsoft.Extensions.Caching.Hybrid;
 using SurveyBasket.Api.Contracts.Answers;
 using SurveyBasket.Api.Contracts.Common;
 using SurveyBasket.Api.Contracts.Questions;
+using System.Linq.Dynamic.Core;
 
 
 namespace SurveyBasket.Api.Services.QuestionService;
@@ -18,7 +18,7 @@ public class QuestionService(
 
     private const string _cachePrefix = "availableQuestions";
 
-    public async Task<Result<PaginatedList<QuestionResponse>>> GetAllAsync(int pollId, RequestFilters filters,CancellationToken cancellationToken = default)
+    public async Task<Result<PaginatedList<QuestionResponse>>> GetAllAsync(int pollId, RequestFilters filters, CancellationToken cancellationToken = default)
     {
         var pollIsExists = await _context.Polls.AnyAsync(x => x.Id == pollId, cancellationToken);
         if (!pollIsExists)
@@ -38,7 +38,7 @@ public class QuestionService(
         {
             query = query.OrderBy($"{filters.SortColumn} {filters.SortDirection}");
         }
-        var source = 
+        var source =
               query.Include(x => x.Answers)
                    .Select(q => new QuestionResponse(
                              q.Id,

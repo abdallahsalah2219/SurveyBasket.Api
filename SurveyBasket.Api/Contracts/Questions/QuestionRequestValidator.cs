@@ -16,9 +16,9 @@ public class QuestionRequestValidator : AbstractValidator<QuestionRequest>
             .WithMessage("Question Should has at least 2 Answers")
             .When(x => x.Answers != null);
 
-        
+
         RuleFor(x => x.Answers)
-            .Must(x => x.Distinct().Count() == x.Count )
+            .Must(x => x.Distinct().Count() == x.Count)
             .WithMessage("You Cannot Duplicated Answers for The Same Question ")
             .When(x => x.Answers != null);
     }

@@ -1,11 +1,10 @@
 ﻿using SurveyBasket.Api.Contracts.Users;
 using SurveyBasket.Api.Services.RoleService;
-using System.Threading;
 
 namespace SurveyBasket.Api.Services.UserService;
 
-public class UserService(UserManager<ApplicationUser> userManager 
-    ,IRoleService roleService
+public class UserService(UserManager<ApplicationUser> userManager
+    , IRoleService roleService
     , ApplicationDbContext context) : IUserService
 {
     private readonly UserManager<ApplicationUser> _userManager = userManager;
@@ -28,7 +27,7 @@ public class UserService(UserManager<ApplicationUser> userManager
                    u.IsDisabled,
                    Roles = roles.Select(x => x.Name!).ToList()
                })
-                .GroupBy(u 
+                .GroupBy(u
                   => new { u.Id, u.FirstName, u.LastName, u.Email, u.IsDisabled })
                 .Select(u => new UserResponse
                 (
@@ -49,21 +48,21 @@ public class UserService(UserManager<ApplicationUser> userManager
 
         var userRoles = await _userManager.GetRolesAsync(user);
 
-        var response = (user , userRoles).Adapt<UserResponse>();
+        var response = (user, userRoles).Adapt<UserResponse>();
 
         return Result.Success(response);
     }
 
     public async Task<Result<UserResponse>> AddAsync(CreateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var emailIsExists = await _userManager.Users.AnyAsync(x => x.Email == request.Email,cancellationToken);
+        var emailIsExists = await _userManager.Users.AnyAsync(x => x.Email == request.Email, cancellationToken);
 
         if (emailIsExists)
             return Result.Failure<UserResponse>(UserErrors.EmailAlreadyExist);
 
-        var allowedRoles = await _roleService.GetAllAsync(cancellationToken:cancellationToken);
+        var allowedRoles = await _roleService.GetAllAsync(cancellationToken: cancellationToken);
 
-        if(request.Roles.Except(allowedRoles.Select(x=>x.Name)).Any())
+        if (request.Roles.Except(allowedRoles.Select(x => x.Name)).Any())
             return Result.Failure<UserResponse>(UserErrors.InvalidRoles);
 
         var user = request.Adapt<ApplicationUser>();
@@ -84,19 +83,19 @@ public class UserService(UserManager<ApplicationUser> userManager
 
 
     }
-    public async Task<Result> UpdateAsync( string id,UpdateUserRequest request, CancellationToken cancellationToken = default)
+    public async Task<Result> UpdateAsync(string id, UpdateUserRequest request, CancellationToken cancellationToken = default)
     {
-        var emailIsExists = await _userManager.Users.AnyAsync(x => x.Email == request.Email && x.Id !=id,cancellationToken);
+        var emailIsExists = await _userManager.Users.AnyAsync(x => x.Email == request.Email && x.Id != id, cancellationToken);
 
         if (emailIsExists)
             return Result.Failure(UserErrors.EmailAlreadyExist);
 
-        var allowedRoles = await _roleService.GetAllAsync(cancellationToken:cancellationToken);
+        var allowedRoles = await _roleService.GetAllAsync(cancellationToken: cancellationToken);
 
-        if(request.Roles.Except(allowedRoles.Select(x=>x.Name)).Any())
+        if (request.Roles.Except(allowedRoles.Select(x => x.Name)).Any())
             return Result.Failure(UserErrors.InvalidRoles);
 
-        if(await _userManager.FindByIdAsync(id) is not { } user )
+        if (await _userManager.FindByIdAsync(id) is not { } user)
             return Result.Failure(UserErrors.UserNotFound);
 
         user = request.Adapt(user);
@@ -140,7 +139,7 @@ public class UserService(UserManager<ApplicationUser> userManager
             return Result.Failure(UserErrors.UserNotFound);
 
         var result = await _userManager.SetLockoutEndDateAsync(user, null);
-        
+
 
         if (result.Succeeded)
             return Result.Success();

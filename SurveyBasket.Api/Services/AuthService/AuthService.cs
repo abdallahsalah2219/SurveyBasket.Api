@@ -9,9 +9,9 @@ using System.Text;
 namespace SurveyBasket.Api.Services.AuthService
 {
     public class AuthService(UserManager<ApplicationUser> userManager,
-        SignInManager<ApplicationUser> signInManager ,
+        SignInManager<ApplicationUser> signInManager,
         IJwtProvider jwtProvider,
-        ILogger<AuthService> logger ,
+        ILogger<AuthService> logger,
         IEmailSender emailSender,
         IHttpContextAccessor httpContextAccessor,
         ApplicationDbContext context) : IAuthService
@@ -25,13 +25,13 @@ namespace SurveyBasket.Api.Services.AuthService
         private readonly ApplicationDbContext _context = context;
 
 
-        private readonly int _refreshTokenExpiryDays=14;
+        private readonly int _refreshTokenExpiryDays = 14;
 
-        public async Task<Result>RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
+        public async Task<Result> RegisterAsync(RegisterRequest request, CancellationToken cancellationToken = default)
         {
             //Check if Email is exists
-            var emailIsExists = await _userManager.Users.AnyAsync(x =>x.Email ==request.Email);
-            if (emailIsExists) 
+            var emailIsExists = await _userManager.Users.AnyAsync(x => x.Email == request.Email);
+            if (emailIsExists)
                 return Result.Failure(UserErrors.EmailAlreadyExist);
             // Adapt Request to Application User
             var user = request.Adapt<ApplicationUser>();
@@ -48,7 +48,7 @@ namespace SurveyBasket.Api.Services.AuthService
                 // Encode the token using Base64 URL-safe format to make it valid inside a URL
                 code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
 
-                _logger.LogInformation("Email confirmation code:{Code}",  code);
+                _logger.LogInformation("Email confirmation code:{Code}", code);
 
 
 
@@ -59,13 +59,13 @@ namespace SurveyBasket.Api.Services.AuthService
             // Return Error If Exists
             var error = result.Errors.First();
 
-            return Result.Failure(new Error(error.Code , error.Description , StatusCodes.Status400BadRequest));
+            return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
         }
 
         public async Task<Result> ConfirmEmailAsync(ConfirmEmailRequest request)
         {
             //Check if User is exists
-            if(await _userManager.FindByIdAsync(request.UserId) is not { } user)
+            if (await _userManager.FindByIdAsync(request.UserId) is not { } user)
                 return Result.Failure(UserErrors.InvalidCode);
 
             // Check if User Email is already confirmed
@@ -100,7 +100,7 @@ namespace SurveyBasket.Api.Services.AuthService
             return Result.Failure(new Error(error.Code, error.Description, StatusCodes.Status400BadRequest));
         }
 
-        public async Task<Result> ResendConfirmationEmailAsync(ResendConfirmationEmailRequest request) 
+        public async Task<Result> ResendConfirmationEmailAsync(ResendConfirmationEmailRequest request)
         {
             //Check if User is exists
             if (await _userManager.FindByEmailAsync(request.Email) is not { } user)
@@ -131,7 +131,7 @@ namespace SurveyBasket.Api.Services.AuthService
         {
             // Find User By Email
             var user = await _userManager.FindByEmailAsync(email);
-            if (user is null) 
+            if (user is null)
                 return Result.Failure<AuthResponse>(UserErrors.InvalidCredentials);
 
             // Check if User is Disabled
@@ -139,14 +139,14 @@ namespace SurveyBasket.Api.Services.AuthService
                 return Result.Failure<AuthResponse>(UserErrors.DisabledUser);
 
             // Check Password 
-            var result = await _signInManager.PasswordSignInAsync(user, password, false,true);
+            var result = await _signInManager.PasswordSignInAsync(user, password, false, true);
 
-            if (result.Succeeded) 
+            if (result.Succeeded)
             {
 
                 var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
                 // Generate JWT Token
-                var (token, expiresIn) = _jwtProvider.GenerateToken(user , userRoles , userPermissions);
+                var (token, expiresIn) = _jwtProvider.GenerateToken(user, userRoles, userPermissions);
 
                 // Generate Refresh Token
                 var refreshToken = GenerateRefreshToken();
@@ -167,7 +167,7 @@ namespace SurveyBasket.Api.Services.AuthService
                 return Result.Success(response);
             }
 
-            var error = result.IsNotAllowed 
+            var error = result.IsNotAllowed
                 ? UserErrors.EmailNotConfirmed
                 : result.IsLockedOut
                 ? UserErrors.LockedUser
@@ -183,7 +183,7 @@ namespace SurveyBasket.Api.Services.AuthService
             if (userId is null)
                 return Result.Failure<AuthResponse>(UserErrors.InvalidJwtToken);
 
-            
+
 
             // Get User By userId
             var user = await _userManager.FindByIdAsync(userId);
@@ -210,7 +210,7 @@ namespace SurveyBasket.Api.Services.AuthService
             var (userRoles, userPermissions) = await GetUserRolesAndPermissions(user, cancellationToken);
 
             // Generate New JWT Token
-            var (newToken, expiresIn) = _jwtProvider.GenerateToken(user , userRoles , userPermissions);
+            var (newToken, expiresIn) = _jwtProvider.GenerateToken(user, userRoles, userPermissions);
 
             // Generate New Refresh Token
             var newRefreshToken = GenerateRefreshToken();
@@ -265,13 +265,14 @@ namespace SurveyBasket.Api.Services.AuthService
 
         public async Task<Result> SendResetPasswordCodeAsync(string email)
         {
-            if(await _userManager.FindByEmailAsync(email) is not { } user)
+            if (await _userManager.FindByEmailAsync(email) is not { } user)
                 return Result.Success();
 
-            if (!user.EmailConfirmed)
-                return Result.Failure(UserErrors.EmailNotConfirmed);
-            // Generate a secure password reset token for the user
 
+            if (!user.EmailConfirmed)
+                return Result.Failure(UserErrors.EmailNotConfirmed with { StatusCode = StatusCodes.Status400BadRequest });
+
+            // Generate a secure password reset token for the user
             var code = await _userManager.GeneratePasswordResetTokenAsync(user);
 
             // Encode the token using Base64 URL-safe format to make it valid inside a URL
@@ -341,12 +342,12 @@ namespace SurveyBasket.Api.Services.AuthService
             // Background Job To Send Email Confirmation
             BackgroundJob.Enqueue(() => _emailSender.SendEmailAsync(user.Email!, "✅ Survey Basket: Email Confirmation", emailBody));
 
-            
+
             await Task.CompletedTask;
 
         }
 
-        
+
 
         private async Task SendResetPasswordEmail(ApplicationUser user, string code)
         {
@@ -382,7 +383,7 @@ namespace SurveyBasket.Api.Services.AuthService
             //    .Distinct()
             //    .ToListAsync(cancellationToken);
 
-             
+
             //  Get Permissions By LINQ Query Syntax  
             var userPermissions = await (from r in _context.Roles
                                          join p in _context.RoleClaims

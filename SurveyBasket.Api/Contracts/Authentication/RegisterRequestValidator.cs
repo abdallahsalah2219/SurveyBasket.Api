@@ -1,10 +1,8 @@
-﻿using SurveyBasket.Api.Abstractions.Consts;
-
-namespace SurveyBasket.Api.Contracts.Authentication
+﻿namespace SurveyBasket.Api.Contracts.Authentication
 {
-    public class RegisterRequestValidator:AbstractValidator<RegisterRequest>
+    public class RegisterRequestValidator : AbstractValidator<RegisterRequest>
     {
-        public RegisterRequestValidator() 
+        public RegisterRequestValidator()
         {
             // Email must be provided and valid format
             RuleFor(x => x.Email)
@@ -17,19 +15,19 @@ namespace SurveyBasket.Api.Contracts.Authentication
                 .Matches(RegexPatterns.Password)
                 .WithMessage("Password should be at least 8 digits and should contains Lowercase, NonAlphanumeric and Uppercase");
 
-           
+
 
             // FirstName must be provided
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required.")
-                .Length(3,100);
+                .Length(3, 100);
 
             // LastName must be provided
             RuleFor(x => x.LastName)
                 .NotEmpty().WithMessage("Last name is required.")
-                .Length(3,100);
+                .Length(3, 100);
 
-            
+
         }
     }
 }

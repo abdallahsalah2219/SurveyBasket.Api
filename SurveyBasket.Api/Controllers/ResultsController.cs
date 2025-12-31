@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using SurveyBasket.Api.Services.ResultService;
+﻿using SurveyBasket.Api.Services.ResultService;
 
 namespace SurveyBasket.Api.Controllers;
 
@@ -31,7 +29,7 @@ public class ResultsController(IResultService resultService) : ControllerBase
             ? Ok(result.Value)
             : result.ToProblem();
     }
-    
+
     [HttpGet("votes-per-question")]
     public async Task<IActionResult> VotesPerQuestion([FromRoute] int pollId, CancellationToken cancellationToken)
     {

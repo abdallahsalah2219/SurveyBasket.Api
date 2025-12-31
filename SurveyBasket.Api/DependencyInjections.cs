@@ -2,11 +2,8 @@
 using Hangfire;
 using MapsterMapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 using SurveyBasket.Api.Authentication;
@@ -37,20 +34,22 @@ public static class DependencyInjections
         services.AddHybridCache();
 
         services.AddCors(options =>
-        options.AddDefaultPolicy( builder =>
+        options.AddDefaultPolicy(builder =>
         builder.AllowAnyOrigin()
                .AllowAnyMethod()
-               .AllowAnyHeader()      
+               .AllowAnyHeader()
         )
         );
 
 
         services.AddAuthConfig(configuration);
+        var connectionString = configuration.GetConnectionString("DefaultConnection") ??
+            throw new InvalidOperationException("Connection String 'DefaultConnection' not found!");
+
         #region Add DbContext
         services.AddDbContext<ApplicationDbContext>(options =>
         {
-            options.UseSqlServer(configuration.GetConnectionString("DefaultConnection") ??
-                throw new InvalidOperationException("Connection String 'DefaultConnection' not found!"));
+            options.UseSqlServer(connectionString);
         });
         #endregion
 
@@ -84,23 +83,29 @@ public static class DependencyInjections
         services.AddHttpContextAccessor();
 
         // Mail Settings Configuration
-        services.Configure<MailSettings>(configuration.GetSection(nameof(MailSettings)));
+        services.AddOptions<MailSettings>()
+            .BindConfiguration(nameof(MailSettings))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
 
         // Health Checks Configuration service and DbContext Check and Hangfire Check and Mail Service Check
         services.AddHealthChecks()
-            .AddSqlServer(name:"database",connectionString:configuration.GetConnectionString("DefaultConnection")!)
+            .AddSqlServer(name: "database", connectionString: connectionString!)
             .AddHangfire(optionx => { optionx.MinimumAvailableServers = 1; })
-            .AddCheck<MailProviderHealthCheck>(name:"Mail Service");
+            .AddCheck<MailProviderHealthCheck>(name: "Mail Service");
 
         // Add ApiVersioning Configuration
-        services.AddApiVersioning(options => 
+        services.AddApiVersioning(options =>
         {
             options.ApiVersionReader = new UrlSegmentApiVersionReader();
-        }).AddApiExplorer(options => 
+        }).AddApiExplorer(options =>
         {
             options.GroupNameFormat = "'v'V";
             options.SubstituteApiVersionInUrl = true;
         });
+
+        // Add OpenApi Configuration and Url is https://localhost:7270/openapi/v1.json 
+        services.AddOpenApi();
 
         return services;
     }
@@ -148,7 +153,7 @@ public static class DependencyInjections
         services.AddSingleton<IMapper>(new Mapper(mappingConfig));
 
 
-        
+
         return services;
 
     }

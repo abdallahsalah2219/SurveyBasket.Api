@@ -1,10 +1,10 @@
 using Hangfire;
 using HangfireBasicAuthenticationFilter;
+using HealthChecks.UI.Client;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Serilog;
 using SurveyBasket.Api;
 using SurveyBasket.Api.Services.NotificationService;
-using Microsoft.AspNetCore.Diagnostics.HealthChecks;
-using HealthChecks.UI.Client;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +28,7 @@ var app = builder.Build();
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
+    app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI(options =>
     {
@@ -46,10 +47,10 @@ app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 
 // url of background jobs  (https://localhost:7270/jobs)
-app.UseHangfireDashboard("/jobs" ,new DashboardOptions 
+app.UseHangfireDashboard("/jobs", new DashboardOptions
 {
-    Authorization = 
-    
+    Authorization =
+
     [
         new HangfireCustomBasicAuthenticationFilter
         {
@@ -82,8 +83,8 @@ app.UseExceptionHandler();
 app.UseRateLimiter();
 
 // route of health check (https://localhost:7270/health)
-app.MapHealthChecks("health", new HealthCheckOptions 
+app.MapHealthChecks("health", new HealthCheckOptions
 {
-    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse    
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
 });
 app.Run();

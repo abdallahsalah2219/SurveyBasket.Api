@@ -4,7 +4,7 @@ public class ResendConfirmationEmailRequestValidator : AbstractValidator<ResendC
 {
     public ResendConfirmationEmailRequestValidator()
     {
-        RuleFor(x=>x.Email)
+        RuleFor(x => x.Email)
             .NotEmpty()
             .EmailAddress();
     }

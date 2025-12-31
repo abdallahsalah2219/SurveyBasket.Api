@@ -1,6 +1,5 @@
 ﻿
 using Asp.Versioning;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace SurveyBasket.Api.Controllers;
@@ -18,7 +17,7 @@ public class PollsController(IPollService pollService) : ControllerBase
 
     [HasPermission(Permissions.GetPolls)]
     [HttpGet("")]
-    public async Task <IActionResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
     {
         return Ok(await _pollService.GetAllAsync(cancellationToken));
     }
@@ -27,7 +26,7 @@ public class PollsController(IPollService pollService) : ControllerBase
     [HttpGet("get-current-polls")]
     [Authorize(Roles = DefaultRoles.Member)]
     [EnableRateLimiting("userLimit")]
-    public async Task <IActionResult> GetCurrentPollsV1(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetCurrentPollsV1(CancellationToken cancellationToken)
     {
         return Ok(await _pollService.GetCurrentPollsAsyncV1(cancellationToken));
     }
@@ -37,7 +36,7 @@ public class PollsController(IPollService pollService) : ControllerBase
     [HttpGet("get-current-polls")]
     [Authorize(Roles = DefaultRoles.Member)]
     [EnableRateLimiting("userLimit")]
-    public async Task <IActionResult> GetCurrentPollsV2(CancellationToken cancellationToken)
+    public async Task<IActionResult> GetCurrentPollsV2(CancellationToken cancellationToken)
     {
         return Ok(await _pollService.GetCurrentPollsAsyncV2(cancellationToken));
     }
@@ -46,7 +45,7 @@ public class PollsController(IPollService pollService) : ControllerBase
     [HttpGet("{id}")]
     [HasPermission(Permissions.GetPolls)]
 
-    public async Task<IActionResult> Get([FromRoute] int id , CancellationToken cancellationToken)
+    public async Task<IActionResult> Get([FromRoute] int id, CancellationToken cancellationToken)
     {
         var result = await _pollService.GetAsync(id, cancellationToken);
 
@@ -68,7 +67,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         return result.IsSuccess
             ? CreatedAtAction(nameof(Get), new { id = result.Value.Id }, result.Value)
             : result.ToProblem();
-        
+
 
     }
 
@@ -79,10 +78,10 @@ public class PollsController(IPollService pollService) : ControllerBase
     {
         var result = await _pollService.UpdateAsync(request, id, cancellationToken);
 
-         return result.IsSuccess? NoContent() : result.ToProblem();
-            
+        return result.IsSuccess ? NoContent() : result.ToProblem();
 
-        
+
+
     }
 
     [HttpDelete("{id}")]
@@ -90,13 +89,13 @@ public class PollsController(IPollService pollService) : ControllerBase
     public async Task<IActionResult> Delete([FromRoute] int id, CancellationToken cancellationToken)
     {
         var result = await _pollService.DeleteAsync(id, cancellationToken);
-       
+
         return result.IsSuccess
             ? NoContent()
             : result.ToProblem();
     }
 
-    [HttpPut("{id}/togglePublish")]
+    [HttpPut("{id}/toggle-publish")]
     [HasPermission(Permissions.UpdatePolls)]
     public async Task<IActionResult> TogglePublish([FromRoute] int id, CancellationToken cancellationToken)
     {
@@ -106,7 +105,7 @@ public class PollsController(IPollService pollService) : ControllerBase
         // StatusCode is 204
         // The best choice for Update Endpoint
         return result.IsSuccess
-            ? NoContent() 
+            ? NoContent()
             : result.ToProblem();
     }
 

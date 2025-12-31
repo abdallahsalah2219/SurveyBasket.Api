@@ -1,14 +1,11 @@
-﻿using Azure.Core;
-using Hangfire;
-using Microsoft.AspNetCore.Http.HttpResults;
+﻿using Hangfire;
 using SurveyBasket.Api.Services.NotificationService;
-using System.Threading;
 
 
 namespace SurveyBasket.Api.Services.PollService;
 
 
-public class PollService(ApplicationDbContext context ,INotificationService notificationService) : IPollService
+public class PollService(ApplicationDbContext context, INotificationService notificationService) : IPollService
 {
     private readonly ApplicationDbContext _context = context;
     private readonly INotificationService _notificationService = notificationService;
@@ -26,8 +23,8 @@ public class PollService(ApplicationDbContext context ,INotificationService noti
         ))
         .ToListAsync(cancellationToken);
 
-    public async Task<IEnumerable<PollResponse>> GetCurrentPollsAsyncV1(CancellationToken cancellationToken = default)=>
-    
+    public async Task<IEnumerable<PollResponse>> GetCurrentPollsAsyncV1(CancellationToken cancellationToken = default) =>
+
          await _context.Polls
          .Where(x => x.IsPublished && x.StartAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow))
             .AsNoTracking()
@@ -40,8 +37,8 @@ public class PollService(ApplicationDbContext context ,INotificationService noti
             x.EndsAt
         ))
             .ToListAsync(cancellationToken);
-    public async Task<IEnumerable<PollResponseV2>> GetCurrentPollsAsyncV2(CancellationToken cancellationToken = default)=>
-    
+    public async Task<IEnumerable<PollResponseV2>> GetCurrentPollsAsyncV2(CancellationToken cancellationToken = default) =>
+
          await _context.Polls
          .Where(x => x.IsPublished && x.StartAt <= DateOnly.FromDateTime(DateTime.UtcNow) && x.EndsAt >= DateOnly.FromDateTime(DateTime.UtcNow))
             .AsNoTracking()
@@ -55,7 +52,7 @@ public class PollService(ApplicationDbContext context ,INotificationService noti
             .ToListAsync(cancellationToken);
 
 
-    
+
 
 
     public async Task<Result<PollResponse>> GetAsync(int id, CancellationToken cancellationToken = default)
@@ -73,7 +70,7 @@ public class PollService(ApplicationDbContext context ,INotificationService noti
     {
         var isExistingTitle = await _context.Polls.AnyAsync(x => x.Title == request.Title, cancellationToken: cancellationToken);
 
-        if (isExistingTitle) 
+        if (isExistingTitle)
             return Result.Failure<PollResponse>(PollErrors.DuplicatedPollTitle);
 
         var poll = request.Adapt<Poll>();
@@ -91,16 +88,15 @@ public class PollService(ApplicationDbContext context ,INotificationService noti
 
         if (isExistingTitle)
             return Result.Failure<PollResponse>(PollErrors.DuplicatedPollTitle);
-         
+
 
         var currentPoll = await _context.Polls.FindAsync(id, cancellationToken);
 
         if (currentPoll is null)
             return Result.Failure(PollErrors.PollNotFound);
-        currentPoll.Title = request.Title;
-        currentPoll.Summary = request.Summary;
-        currentPoll.StartAt = request.StartAt;
-        currentPoll.EndsAt = request.EndsAt;
+
+        // Update the current poll with the request data
+        currentPoll = request.Adapt(currentPoll);
 
         await _context.SaveChangesAsync(cancellationToken);
         return Result.Success();
@@ -109,7 +105,7 @@ public class PollService(ApplicationDbContext context ,INotificationService noti
 
     public async Task<Result> DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
-        var poll = await _context.Polls.FindAsync(id ,cancellationToken);
+        var poll = await _context.Polls.FindAsync(id, cancellationToken);
 
         if (poll is null)
             return Result.Failure(PollErrors.PollNotFound);
@@ -133,9 +129,9 @@ public class PollService(ApplicationDbContext context ,INotificationService noti
 
         if (Poll.IsPublished && Poll.StartAt == DateOnly.FromDateTime(DateTime.UtcNow))
             BackgroundJob.Enqueue(() => _notificationService.SendNewPollsNotification(Poll.Id));
-        
+
         return Result.Success();
     }
 
-   
+
 }

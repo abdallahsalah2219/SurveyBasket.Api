@@ -1,10 +1,7 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.RateLimiting;
-using Microsoft.Extensions.Options;
 using SurveyBasket.Api.Authentication;
-using SurveyBasket.Api.Contracts.Authentication;
 using SurveyBasket.Api.Services.AuthService;
-using System.Diagnostics;
 
 namespace SurveyBasket.Api.Controllers;
 
@@ -22,7 +19,7 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
     public async Task<IActionResult> Register([FromBody] RegisterRequest request, CancellationToken cancellationToken)
     {
         var result = await _authService.RegisterAsync(request, cancellationToken);
-        return result.IsSuccess ? Ok(): result.ToProblem();
+        return result.IsSuccess ? Ok() : result.ToProblem();
     }
 
     [HttpPost("confirm-email")]
@@ -43,13 +40,13 @@ public class AuthController(IAuthService authService /*,IOptions<JwtOptions> jwt
     public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken cancellationToken)
     {
 
-        
+
         var authResult = await _authService.GetTokenAsync(request.Email, request.Password, cancellationToken);
 
         return authResult.IsSuccess
         ? Ok(authResult.Value)
-        : authResult.ToProblem( );
-           
+        : authResult.ToProblem();
+
     }
 
     [HttpPost("refresh")]
